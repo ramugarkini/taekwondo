@@ -22,7 +22,7 @@ if (isset($uri_segments[1]) && intval($uri_segments[1]) > 0) {
     // If no data is found for the given ID, redirect or show an error
     if (!$row && $id!=0) {
         $_SESSION['error'] = "Record not found!";
-        header("Location: /individual_entry_form");
+        header("Location: /");
         exit();
     }
 }
@@ -201,4 +201,4 @@ $pdf->Cell(0, 5, '', 1, 1);
 $pdf->Ln(5);
 
 // Output the PDF
-$pdf->Output("Individual Entry Form"." ".$row['name'].'_2.pdf', 'I');
+$pdf->Output("Individual Entry Form"." ".$row['name'].' 2.pdf', 'I');

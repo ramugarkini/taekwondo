@@ -22,7 +22,7 @@ if (isset($uri_segments[1])) {
     // If no data is found for the given ID, redirect or show an error
     if (!$row) {
         $_SESSION['error'] = "Record not found!";
-        header("Location: /individual_entry_form");
+        header("Location: /");
         exit();
     }
 }
@@ -222,7 +222,7 @@ if (!empty($row['state_association_stamp_path']) && file_exists($row['state_asso
 
 // Output the PDF
 // $pdf->Output('taekwondo_entry_form.pdf', 'I');
-$pdf->Output("Individual Entry Form"." ".$row['name'].'_1.pdf', 'I');
+$pdf->Output("Individual Entry Form"." ".$row['name'].' 1.pdf', 'I');
 
 /*$content = '';
 $content .= '

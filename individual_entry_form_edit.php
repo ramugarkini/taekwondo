@@ -471,7 +471,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 	            				<input type="text" name="name" class="form-control" value="<?php echo $row['name'] ?? ''; ?>" required>
 		                    </td>
 		                    <td class="no-right-border">
-                                <label>State Organization Name <span style="color: red; font-size: 1.3em;">*</span></label>
+                                <label>State/Organization Name <span style="color: red; font-size: 1.3em;">*</span></label>
                             </td>
 		                    <td class="no-left-border">
 		                    	<input type="text" name="state_organization_name" class="form-control" value="<?php echo $row['state_organization_name'] ?? ''; ?>" required>
