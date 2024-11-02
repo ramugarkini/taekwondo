@@ -1,6 +1,5 @@
 <?php
 
-
 $mode = 'Add';
 $id = 0;
 
@@ -24,6 +23,38 @@ if (isset($uri_segments[1]) && intval($uri_segments[1]) > 0) {
     }
 }
 
+$uploadsDir = 'uploads/photo';
+
+// Function to handle individual file upload
+function uploadFile($file, $id, $uploadsDir) {
+    if ($file['error'] === UPLOAD_ERR_OK) {
+        $fileTmpPath = $file['tmp_name'];
+        $fileName = $file['name'];
+        $fileExtension = pathinfo($fileName, PATHINFO_EXTENSION);
+        $cleanFileName = $id . '.' . $fileExtension;
+
+        // Create a nested directory structure based on the ID
+        $nestedPath = $uploadsDir . '/' . implode('/', str_split($id));
+        if (!is_dir($nestedPath)) {
+            mkdir($nestedPath, 0777, true);
+        }
+
+        // Define the final destination for the uploaded file
+        $destination = "$nestedPath/$cleanFileName";
+        if (move_uploaded_file($fileTmpPath, $destination)) {
+            return $destination; // Return the path if successful
+        }
+    }
+    return null; // Return null if the upload failed
+}
+
+// Function to delete a file if it exists
+function deleteFile($path) {
+    if (file_exists($path)) {
+        unlink($path);
+    }
+}
+
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (isset($_POST['add'])) {
         // Collecting form data for adding
@@ -44,71 +75,67 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $name_of_school = $_POST['name_of_school'];
         $board_university_name = $_POST['board_university_name'];
 
-        // Handle file uploads (if applicable)
-        $photo_path = $_FILES['photo_path']['name'] ?? null;
-        $signature_parent_guardian_path = $_FILES['signature_parent_guardian_path']['name'] ?? null;
-        $signature_participant_path = $_FILES['signature_participant_path']['name'] ?? null;
-        $signature_president_secretary_path = $_FILES['signature_president_secretary_path']['name'] ?? null;
-        $state_association_stamp_path = $_FILES['state_association_stamp_path']['name'] ?? null;
+        $photo_path = '';
+        $signature_parent_guardian_path = '';
+        $signature_participant_path = '';
+        $signature_president_secretary_path = '';
+        $state_association_stamp_path = '';
 
-        // Here, you should implement file upload handling
-        // Example: move_uploaded_file($_FILES['photo']['tmp_name'], 'uploads/' . $photo);
 
-        // Prepare the SQL statement for inserting
-        $sql = "INSERT INTO individual_entry_form (
-            type, 
-            category, 
-            gender, 
-            weight, 
-            weight_category, 
-            name, 
-            photo_path, 
-            state_organization_name, 
-            date_of_birth, 
-            age, 
-            parent_guardian_name, 
-            current_belt_grade, 
-            tfi_id_no, 
-            belt_certificate_no, 
-            academic_qualification, 
-            name_of_school, 
-            board_university_name, 
-            signature_parent_guardian_path, 
-            signature_participant_path, 
-            signature_president_secretary_path, 
-            state_association_stamp_path
-        ) VALUES (
-            '$type', 
-            '$category', 
-            '$gender', 
-            '$weight', 
-            '$weight_category', 
-            '$name', 
-            '$photo_path', 
-            '$state_organization_name', 
-            '$date_of_birth', 
-            '$age', 
-            '$parent_guardian_name', 
-            '$current_belt_grade', 
-            '$tfi_id_no', 
-            '$belt_certificate_no', 
-            '$academic_qualification', 
-            '$name_of_school', 
-            '$board_university_name', 
-            '$signature_parent_guardian_path', 
-            '$signature_participant_path', 
-            '$signature_president_secretary_path', 
-            '$state_association_stamp_path'
-        )";
+        
+
+        // Prepare the SQL statement
+        $stmt = $conn->prepare("INSERT INTO individual_entry_form (
+                    type, category, gender, weight, weight_category, name, photo_path, 
+                    state_organization_name, date_of_birth, age, parent_guardian_name, 
+                    current_belt_grade, tfi_id_no, belt_certificate_no, academic_qualification, 
+                    name_of_school, board_university_name, signature_parent_guardian_path, 
+                    signature_participant_path, signature_president_secretary_path, 
+                    state_association_stamp_path
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+
+
+        // Bind parameters
+        $stmt->bind_param("sssssssssssssssssssss", 
+            $type, $category, $gender, $weight, $weight_category, $name, 
+            $photo_path, $state_organization_name, $date_of_birth, $age, 
+            $parent_guardian_name, $current_belt_grade, $tfi_id_no, 
+            $belt_certificate_no, $academic_qualification, $name_of_school, 
+            $board_university_name, $signature_parent_guardian_path, 
+            $signature_participant_path, $signature_president_secretary_path, 
+            $state_association_stamp_path
+        );
 
         // Execute insert query
-        if ($conn->query($sql)) {
-            $_SESSION['success'] = 'Entry Added Successfully';
-            header("Location: /individual_entry_form/$conn->insert_id");
-            exit();
+        if ($stmt->execute()) {
+            $last_id = $stmt->insert_id; // Get the last inserted ID
+            // File uploads
+            $photo_path = uploadFile($_FILES['photo_path'], $last_id, 'uploads/photo');
+            $signature_parent_guardian_path = uploadFile($_FILES['signature_parent_guardian_path'], $last_id, 'uploads/signatures/parent_guardian');
+            $signature_participant_path = uploadFile($_FILES['signature_participant_path'], $last_id, 'uploads/signatures/participant');
+            $signature_president_secretary_path = uploadFile($_FILES['signature_president_secretary_path'], $last_id, 'uploads/signatures/president_secretary');
+            $state_association_stamp_path = uploadFile($_FILES['state_association_stamp_path'], $last_id, 'uploads/stamp');
+
+            $sql = "UPDATE individual_entry_form SET 
+                photo_path = '$photo_path', 
+                signature_parent_guardian_path = '$signature_parent_guardian_path', 
+                signature_participant_path = '$signature_participant_path', 
+                signature_president_secretary_path = '$signature_president_secretary_path', 
+                state_association_stamp_path = '$state_association_stamp_path' 
+                WHERE id = '$last_id'";
+
+            // Execute update query
+            if ($conn->query($sql)) {
+                $_SESSION['success'] = 'Entry Added Successfully';
+                header("Location: /individual_entry_form/$last_id");
+                exit();
+            }
+
         } else {
-            $_SESSION['error'] = 'Something went wrong while adding: ' . $conn->error;
+            $_SESSION['error'] = 'Something went wrong while adding: ' . $stmt->error;
         }
+
+        $stmt->close(); // Close the statement
     } elseif (isset($_POST['update'])) {
         // Collect form data for updating
         $id = $_POST['id'];  // Ensure the ID is collected for updating
@@ -129,15 +156,57 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $name_of_school = $_POST['name_of_school'];
         $board_university_name = $_POST['board_university_name'];
 
-        // Handle file uploads (if applicable)
-        $photo_path = $_FILES['photo_path']['name'] ?? null;
-        $signature_parent_guardian_path = $_FILES['signature_parent_guardian_path']['name'] ?? null;
-        $signature_participant_path = $_FILES['signature_participant_path']['name'] ?? null;
-        $signature_president_secretary_path = $_FILES['signature_president_secretary_path']['name'] ?? null;
-        $state_association_stamp_path = $_FILES['state_association_stamp_path']['name'] ?? null;
+        $existing_photo_path = !empty($row['photo_path']) ? $row['photo_path'] : '';
 
-        // File upload handling (if the file is uploaded, move it to the desired directory)
-        // Example: move_uploaded_file($_FILES['photo']['tmp_name'], 'uploads/' . $photo);
+        // Handle file uploads (check if new files were uploaded)
+        $photo_path = !empty($_FILES['photo_path']['name']) 
+                ? uploadFile($_FILES['photo_path'], $id, 'uploads/photo') 
+                : (isset($_POST['photo_path']) && $_POST['photo_path'] !== '' ? $_POST['photo_path'] : $existing_photo_path);
+
+        if ($_POST['remove_photo_path'] == '' && $_POST['photo_path'] == '') {
+            $photo_path = '';
+        }
+
+        // Existing paths
+        $existing_signature_parent_guardian_path = !empty($row['signature_parent_guardian_path']) ? $row['signature_parent_guardian_path'] : '';
+        $existing_signature_participant_path = !empty($row['signature_participant_path']) ? $row['signature_participant_path'] : '';
+        $existing_signature_president_secretary_path = !empty($row['signature_president_secretary_path']) ? $row['signature_president_secretary_path'] : '';
+        $existing_state_association_stamp_path = !empty($row['state_association_stamp_path']) ? $row['state_association_stamp_path'] : '';
+
+        // Handle file uploads for Parent/Guardian signature
+        $signature_parent_guardian_path = !empty($_FILES['signature_parent_guardian_path']['name']) 
+            ? uploadFile($_FILES['signature_parent_guardian_path'], $id, 'uploads/signatures/parent_guardian') 
+            : (isset($_POST['signature_parent_guardian_path']) ? $_POST['signature_parent_guardian_path'] : $existing_signature_parent_guardian_path);
+
+        // Handle file uploads for Participant signature
+        $signature_participant_path = !empty($_FILES['signature_participant_path']['name']) 
+            ? uploadFile($_FILES['signature_participant_path'], $id, 'uploads/signatures/participant') 
+            : (isset($_POST['signature_participant_path']) ? $_POST['signature_participant_path'] : $existing_signature_participant_path);
+
+        // Handle file uploads for President/Secretary signature
+        $signature_president_secretary_path = !empty($_FILES['signature_president_secretary_path']['name']) 
+            ? uploadFile($_FILES['signature_president_secretary_path'], $id, 'uploads/signatures/president_secretary') 
+            : (isset($_POST['signature_president_secretary_path']) ? $_POST['signature_president_secretary_path'] : $existing_signature_president_secretary_path);
+
+        // Handle file uploads for State Association stamp
+        $state_association_stamp_path = !empty($_FILES['state_association_stamp_path']['name']) 
+            ? uploadFile($_FILES['state_association_stamp_path'], $id, 'uploads/stamp') 
+            : (isset($_POST['state_association_stamp_path']) ? $_POST['state_association_stamp_path'] : $existing_state_association_stamp_path);
+
+        // Handle removals
+        if (isset($_POST['remove_signature_parent_guardian_path']) && $_POST['remove_signature_parent_guardian_path'] === '') {
+            $signature_parent_guardian_path = '';
+        }
+        if (isset($_POST['remove_signature_participant_path']) && $_POST['remove_signature_participant_path'] === '') {
+            $signature_participant_path = '';
+        }
+        if (isset($_POST['remove_signature_president_secretary_path']) && $_POST['remove_signature_president_secretary_path'] === '') {
+            $signature_president_secretary_path = '';
+        }
+        if (isset($_POST['remove_state_association_stamp_path']) && $_POST['remove_state_association_stamp_path'] === '') {
+            $state_association_stamp_path = '';
+        }
+
 
         // Prepare the SQL statement for updating
         $sql = "UPDATE individual_entry_form SET 
@@ -167,22 +236,48 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         // Execute update query
         if ($conn->query($sql)) {
             $_SESSION['success'] = 'Changes Updated Successfully';
-            header("Location: /individual_entry_form/$uri_segments[1]");
+            header("Location: /individual_entry_form/$id");
             exit();
         } else {
             $_SESSION['error'] = 'Something went wrong while updating: ' . $conn->error;
         }
     } elseif (isset($_POST['delete'])) {
-        $sql = "DELETE FROM individual_entry_form WHERE id = '".$_POST['id']."'";
+        $id = $_POST['id'];
 
-        //use for MySQLi OOP
-        if($conn->query($sql)){
-            $_SESSION['success'] = 'Entry Deleted Successfully';
-            header("Location: /individual_entry_form");
-            exit();
+        // Fetch the file paths from the database to delete associated files
+        $stmt = $conn->prepare("SELECT photo_path, signature_parent_guardian_path, signature_participant_path, signature_president_secretary_path, state_association_stamp_path FROM individual_entry_form WHERE id = ?");
+        $stmt->bind_param("i", $id); // Assuming $id is an integer
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $data = $result->fetch_assoc();
+
+        if ($data) {
+            // Delete files associated with the entry
+            deleteFile($data['photo_path']);
+            deleteFile($data['signature_parent_guardian_path']);
+            deleteFile($data['signature_participant_path']);
+            deleteFile($data['signature_president_secretary_path']);
+            deleteFile($data['state_association_stamp_path']);
+
+            // Prepare the delete statement
+            $deleteStmt = $conn->prepare("DELETE FROM individual_entry_form WHERE id = ?");
+            $deleteStmt->bind_param("i", $id); // Assuming $id is an integer
+
+            // Execute delete query
+            if ($deleteStmt->execute()) {
+                $_SESSION['success'] = 'Entry Deleted Successfully';
+                header("Location: /individual_entry_form");
+                exit();
+            } else {
+                $_SESSION['error'] = 'Something went wrong in deleting the entry: ' . $deleteStmt->error;
+            }
+            
+            $deleteStmt->close(); // Close the delete statement
         } else {
-            $_SESSION['error'] = 'Something went wrong in deleting the entry';
+            $_SESSION['error'] = 'No entry found for the provided ID.';
         }
+
+        $stmt->close(); // Close the select statement
     }
 }
 
@@ -250,7 +345,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <br>
     <div class="d-flex align-items-center justify-content-between mb-3" style="display: flex; align-items: center;">
         <!-- Back Button -->
-        <a href="/individual_entry_form" class="btn btn-primary" style="margin-right: auto;">
+        <a href="javascript:void(0);" onclick="window.history.back();" class="btn btn-primary" style="margin-right: auto;">
             <span class="glyphicon glyphicon-arrow-left"></span> Back
         </a>
 
@@ -260,9 +355,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         </h1>
 
         <!-- New Button -->
-        <a href="individual_entry_form/0" class="btn btn-primary" style="margin-left: auto;">
+        <!-- <a href="/individual_entry_form/0" class="btn btn-primary" style="margin-left: auto;">
             <span class="glyphicon glyphicon-plus"></span> New
-        </a>
+        </a> -->
     </div>
 
 
@@ -298,27 +393,36 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 	        </tr>
 	        <tr>
 	        	<td>
+                    <label>
 	        	    <input type="radio" name="type" value="sub_junior" <?php echo ($row['type'] ?? '') == 'sub_junior' ? 'checked' : ''; ?>>
 	        	    Sub Junior
+                    </label>
 	        	</td>
 	        	<td>
+                    <label>
 	        	    <input type="radio" name="type" value="cadet" <?php echo ($row['type'] ?? '') == 'cadet' ? 'checked' : ''; ?>>
 	        	    Cadet
+                    </label>
 	        	</td>
 	        	<td>
+                    <label>
 	        	    <input type="radio" name="type" value="junior" <?php echo ($row['type'] ?? '') == 'junior' ? 'checked' : ''; ?>>
 	        	    Junior
+                    </label>
 	        	</td>
 	        	<td>
+                    <label>
 	        	    <input type="radio" name="type" value="senior" <?php echo ($row['type'] ?? '') == 'senior' ? 'checked' : ''; ?>>
 	        	    Senior
+                    </label>
 	        	</td>
 	        </tr>
 	        <tr>
 	            <td colspan="4">
 	                <table style="width: 100%; border: none;">
 	                    <tr>
-	                        <td>Category: 
+	                        <td>
+                                <label>Category <span style="color: red; font-size: 1.3em;">*</span></label>
 	                        	<label>
 						            <input type="radio" name="category" value="Individual" <?php echo ($row['category'] ?? '') == 'Individual' ? 'checked' : ''; ?>>
 						            Individual
@@ -332,7 +436,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 						            Group
 						        </label>
 						    </td>
-	                        <td>Gender: 
+	                        <td>
+                                <label>Gender <span style="color: red; font-size: 1.3em;">*</span></label>
 	                        	<label>
 	                	            <input type="radio" name="gender" value="Male" <?php echo ($row['gender'] ?? '') == 'Male' ? 'checked' : ''; ?>>
 	                	            Male
@@ -342,11 +447,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 	                	            Female
 	                	        </label>
 	                        </td>
-	                        <td>Weight
+	                        <td>
+                                <label>Weight <span style="color: red; font-size: 1.3em;">*</span></label>
 	                        	<input type="number" name="weight" class="form-control" value="<?php echo $row['weight'] ?? ''; ?>" required>
 	                        </td>
-	                        <td>Weight Category
-	                        	<input type="number" name="weight_category" class="form-control" value="<?php echo $row['weight_category'] ?? ''; ?>" required>
+	                        <td>
+                                <label>Weight Category<span style="color: red; font-size: 1.3em;">*</span></label>
+	                        	<input type="text" name="weight_category" class="form-control" value="<?php echo $row['weight_category'] ?? ''; ?>" required>
 	                        </td>
 	                        
 	                    </tr>
@@ -357,53 +464,86 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 		        <td colspan="4">
 		            <table style="width: 100%; border: none;">
 		                <tr>
-		                    <td class="no-right-border">Name:</td>
+		                    <td class="no-right-border">
+                                <label>Name <span style="color: red; font-size: 1.3em;">*</span></label>
+                            </td>
 	            			<td class="no-left-border">
 	            				<input type="text" name="name" class="form-control" value="<?php echo $row['name'] ?? ''; ?>" required>
 		                    </td>
-		                    <td class="no-right-border">State Organization Name:</td>
+		                    <td class="no-right-border">
+                                <label>State Organization Name <span style="color: red; font-size: 1.3em;">*</span></label>
+                            </td>
 		                    <td class="no-left-border">
-		                    	<input type="text" name="state_organization_name" class="form-control" value="<?php echo $row['state_organization_name'] ?? ''; ?>">
+		                    	<input type="text" name="state_organization_name" class="form-control" value="<?php echo $row['state_organization_name'] ?? ''; ?>" required>
 		                    </td>
-            			        <td rowspan="5" style="text-align: center;">Attach One Passport Size Photo
-            	                	<input type="file" name="photo_path">
-            			            <?php if (!empty($row['photo_path'])): ?>
-            			                <p>Current: <?php echo $row['photo_path']; ?></p>
-            			            <?php endif; ?>
-            	                </td>
+        			        <td rowspan="5" style="text-align: center;">
+                                <label>Attach One Passport Size Photo</label>
+                                <!-- File Input Wrapper -->
+                                <div class="custom-file mb-3" style="text-align: center; margin: 0 auto;">
+                                    <input type="file" name="photo_path" id="photo_path" accept="image/*" class="custom-file-input">
+                                    <label class="custom-file-label" for="photo_path">Choose file</label>
+                                </div>
+
+        	                	<!-- Check if the photo_path is not empty and display the image -->
+                                <div id="current_photo_display" style="display: <?php echo empty($row['photo_path']) ? 'none' : 'block'; ?>; margin-bottom: 10px;">
+                                    <img src="/<?php echo htmlspecialchars($row['photo_path']); ?>" alt="<?php echo htmlspecialchars($row['name']); ?>" style="max-width: 200px; max-height: 200px; display: inline-block;">
+                                </div>
+
+                                <!-- Optional: Add a preview area for the uploaded image -->
+                                <div id="image_preview" style="display: none; margin-bottom: 10px;">
+                                    <img id="preview_img" src="#" alt="Image Preview" style="max-width: 200px; max-height: 200px; display: inline-block;">
+                                </div>
+
+                                <!-- Button to remove the photo -->
+                                <button type="button" id="remove_photo" class="btn btn-danger mt-2">Remove Photo</button>
+                                <input type="hidden" id="remove_photo_path" name="remove_photo_path" value="<?php echo htmlspecialchars($row['photo_path']); ?>">
+
+        	                </td>
 		                </tr>
 		                <tr>
-		                    <td class="no-right-border">Date of Birth:</td>
+		                    <td class="no-right-border">
+                                <label>Date of Birth <span style="color: red; font-size: 1.3em;">*</span></label>
+                            </td>
 		                    <td class="no-left-border">
-		                    	<input type="date" name="date_of_birth" class="form-control" value="<?php echo $row['date_of_birth'] ?? ''; ?>">
+		                        <input type="date" name="date_of_birth" id="date_of_birth" class="form-control" value="<?php echo $row['date_of_birth'] ?? ''; ?>" onkeyup="calculateAge()" required>
 		                    </td>
-		                    <td class="no-right-border">Age:</td>
+		                    <td class="no-right-border">
+                                <label>Age </label>
+                            </td>
 		                    <td class="no-left-border">
-		                    	<input type="number" name="age" class="form-control" value="<?php echo $row['age'] ?? ''; ?>">
+		                        <input type="number" name="age" id="age" class="form-control" value="<?php echo $row['age'] ?? ''; ?>" readonly>
 		                    </td>
 		                </tr>
 		                <tr>
-		                    <td class="no-right-border">Parent/Guardian Name:</td>
+		                    <td class="no-right-border">
+                                <label>Parent/Guardian Name <span style="color: red; font-size: 1.3em;">*</span></label>
+                            </td>
 		                    <td class="no-left-border">
-		                    	<input type="text" name="parent_guardian_name" class="form-control" value="<?php echo $row['parent_guardian_name'] ?? ''; ?>">
+		                    	<input type="text" name="parent_guardian_name" class="form-control" value="<?php echo $row['parent_guardian_name'] ?? ''; ?>" required>
 		                    </td>
 		                    <td class="no-right-border"></td>
 		                    <td class="no-left-border"></td>
 		                </tr>
 		                <tr>
-		                    <td class="no-right-border">Current Belt Grade:</td>
+		                    <td class="no-right-border">
+                                <label>Current Belt Grade <span style="color: red; font-size: 1.3em;">*</span></label>
+                            </td>
 		                    <td class="no-left-border">
-		                    	<input type="text" name="current_belt_grade" class="form-control" value="<?php echo $row['current_belt_grade'] ?? ''; ?>">
+		                    	<input type="text" name="current_belt_grade" class="form-control" value="<?php echo $row['current_belt_grade'] ?? ''; ?>" required>
 		                    </td>
-		                    <td class="no-right-border">TFI ID No.:</td>
+		                    <td class="no-right-border">
+                                <label>TFI ID No. <span style="color: red; font-size: 1.3em;">*</span></label>
+                            </td>
 		                    <td class="no-left-border">
-		                    	<input type="text" name="tfi_id_no" class="form-control" value="<?php echo $row['tfi_id_no'] ?? ''; ?>">
+		                    	<input type="text" name="tfi_id_no" class="form-control" value="<?php echo $row['tfi_id_no'] ?? ''; ?>" required>
 		                    </td>
 		                </tr>
 		                <tr>
-		                    <td class="no-right-border">Belt Certificate No.:</td>
+		                    <td class="no-right-border">
+                                <label>Belt Certificate No. <span style="color: red; font-size: 1.3em;">*</span></label>
+                            </td>
 		                    <td class="no-left-border">
-		                    	<input type="text" name="belt_certificate_no" class="form-control" value="<?php echo $row['belt_certificate_no'] ?? ''; ?>">
+		                    	<input type="text" name="belt_certificate_no" class="form-control" value="<?php echo $row['belt_certificate_no'] ?? ''; ?>" required>
 		                    </td>
 		                    <td class="no-right-border"></td>
 		                    <td class="no-left-border"></td>
@@ -421,19 +561,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 		        <td colspan="4">
 		            <table style="width: 100%; border: none;">
 		                <tr>
-		                    <td class="no-right-border">Academic Qualification:</td>
+		                    <td class="no-right-border">
+                                <label>Academic Qualification <span style="color: red; font-size: 1.3em;">*</span></label>
+                            </td>
 		                    <td class="no-left-border">
-		                    	<input type="text" name="academic_qualification" class="form-control" value="<?php echo $row['academic_qualification'] ?? ''; ?>">
+		                    	<input type="text" name="academic_qualification" class="form-control" value="<?php echo $row['academic_qualification'] ?? ''; ?>" required>
 		                    </td>
-		                    <td class="no-right-border">Name of School:</td>
+		                    <td class="no-right-border">
+                                <label>Name of School <span style="color: red; font-size: 1.3em;">*</span></label>
+                            </td>
 		                    <td class="no-left-border">
-		                    	<input type="text" name="name_of_school" class="form-control" value="<?php echo $row['name_of_school'] ?? ''; ?>">
+		                    	<input type="text" name="name_of_school" class="form-control" value="<?php echo $row['name_of_school'] ?? ''; ?>" required>
 		                    </td>
 		                </tr>
 		                <tr>
-		                    <td class="no-right-border">Name of Board/University:</td>
+		                    <td class="no-right-border">
+                                <label>Name of Board/University <span style="color: red; font-size: 1.3em;">*</span></label>
+                            </td>
 		                    <td class="no-left-border">
-		                    	<input type="text" name="board_university_name" class="form-control" value="<?php echo $row['board_university_name'] ?? ''; ?>">
+		                    	<input type="text" name="board_university_name" class="form-control" value="<?php echo $row['board_university_name'] ?? ''; ?>" required>
 		                    </td>
 		                    <td class="no-right-border"></td>
 		                    <td class="no-left-border"></td>
@@ -449,35 +595,74 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 		</div>
 
 		<table>
-		    <tr>
-		        <td>Signature of Parent/Guardian
-		        	<input type="file" name="signature_parent_guardian_path">
-		        	<?php if (!empty($row['signature_parent_guardian_path'])): ?>
-		        	    <p>Current: <?php echo $row['signature_parent_guardian_path']; ?></p>
-		        	<?php endif; ?>
-		        </td>
-		        <td>Signature of Participant
-		        	<input type="file" name="signature_participant_path">
-		        	<?php if (!empty($row['signature_participant_path'])): ?>
-		        	    <p>Current: <?php echo $row['signature_participant_path']; ?></p>
-		        	<?php endif; ?>
-		        </td>
-		    </tr>
-		    <tr>
-		        <td>Signature of President/Secretary
-		        	<input type="file" name="signature_president_secretary_path">
-		        	<?php if (!empty($row['signature_president_secretary_path'])): ?>
-		        	    <p>Current: <?php echo $row['signature_president_secretary_path']; ?></p>
-		        	<?php endif; ?>
-		        </td>
-		        <td>State Association with stamp
-		        	<input type="file" name="state_association_stamp_path">
-		        	<?php if (!empty($row['state_association_stamp_path'])): ?>
-		        	    <p>Current: <?php echo $row['state_association_stamp_path']; ?></p>
-		        	<?php endif; ?>
-		        </td>
-		    </tr>
-		</table>
+            <tr>
+                <td style="text-align: center;">
+                    Signature of Parent/Guardian
+                    <div class="custom-file mb-3" style="text-align: center; margin: 0 auto;">
+                        <input type="file" name="signature_parent_guardian_path" id="signature_parent_guardian_path" accept="image/*" class="custom-file-input">
+                        <label class="custom-file-label" for="signature_parent_guardian_path">Choose file</label>
+                    </div>
+                    <div id="current_signature_parent_guardian_display" style="display: <?php echo empty($row['signature_parent_guardian_path']) ? 'none' : 'block'; ?>; margin-bottom: 10px;">
+                        <img src="/<?php echo htmlspecialchars($row['signature_parent_guardian_path']); ?>" alt="Signature of Parent/Guardian" style="max-width: 200px; max-height: 200px; display: inline-block;">
+                    </div>
+                    <div id="image_preview_parent_guardian" style="display: none; margin-bottom: 10px;">
+                        <img id="preview_signature_parent_guardian" src="#" alt="Image Preview" style="max-width: 200px; max-height: 200px; display: inline-block;">
+                    </div>
+                    <button type="button" id="remove_signature_parent_guardian" class="btn btn-danger mt-2">Remove Photo</button>
+                    <input type="hidden" id="remove_signature_parent_guardian_path" name="remove_signature_parent_guardian_path" value="<?php echo htmlspecialchars($row['signature_parent_guardian_path']); ?>">
+                </td>
+                <td style="text-align: center;">
+                    Signature of Participant
+                    <div class="custom-file mb-3" style="text-align: center; margin: 0 auto;">
+                        <input type="file" name="signature_participant_path" id="signature_participant_path" accept="image/*" class="custom-file-input">
+                        <label class="custom-file-label" for="signature_participant_path">Choose file</label>
+                    </div>
+                    <div id="current_signature_participant_display" style="display: <?php echo empty($row['signature_participant_path']) ? 'none' : 'block'; ?>; margin-bottom: 10px;">
+                        <img src="/<?php echo htmlspecialchars($row['signature_participant_path']); ?>" alt="Signature of Participant" style="max-width: 200px; max-height: 200px; display: inline-block;">
+                    </div>
+                    <div id="image_preview_participant" style="display: none; margin-bottom: 10px;">
+                        <img id="preview_signature_participant" src="#" alt="Image Preview" style="max-width: 200px; max-height: 200px; display: inline-block;">
+                    </div>
+                    <button type="button" id="remove_signature_participant" class="btn btn-danger mt-2">Remove Photo</button>
+                    <input type="hidden" id="remove_signature_participant_path" name="remove_signature_participant_path" value="<?php echo htmlspecialchars($row['signature_participant_path']); ?>">
+                </td>
+            </tr>
+            <tr>
+                <td style="text-align: center;">
+                    Signature of President/Secretary
+                    <div class="custom-file mb-3" style="text-align: center; margin: 0 auto;">
+                        <input type="file" name="signature_president_secretary_path" id="signature_president_secretary_path" accept="image/*" class="custom-file-input">
+                        <label class="custom-file-label" for="signature_president_secretary_path">Choose file</label>
+                    </div>
+                    <div id="current_signature_president_secretary_display" style="display: <?php echo empty($row['signature_president_secretary_path']) ? 'none' : 'block'; ?>; margin-bottom: 10px;">
+                        <img src="/<?php echo htmlspecialchars($row['signature_president_secretary_path']); ?>" alt="Signature of President/Secretary" style="max-width: 200px; max-height: 200px; display: inline-block;">
+                    </div>
+                    <div id="image_preview_president_secretary" style="display: none; margin-bottom: 10px;">
+                        <img id="preview_signature_president_secretary" src="#" alt="Image Preview" style="max-width: 200px; max-height: 200px; display: inline-block;">
+                    </div>
+                    <button type="button" id="remove_signature_president_secretary" class="btn btn-danger mt-2">Remove Photo</button>
+                    <input type="hidden" id="remove_signature_president_secretary_path" name="remove_signature_president_secretary_path" value="<?php echo htmlspecialchars($row['signature_president_secretary_path']); ?>">
+                </td>
+                
+                <td style="text-align: center;">
+                    State Association with stamp
+                    <div class="custom-file mb-3" style="text-align: center; margin: 0 auto;">
+                        <input type="file" name="state_association_stamp_path" id="state_association_stamp_path" accept="image/*" class="custom-file-input">
+                        <label class="custom-file-label" for="state_association_stamp_path">Choose file</label>
+                    </div>
+                    <div id="current_state_association_stamp_display" style="display: <?php echo empty($row['state_association_stamp_path']) ? 'none' : 'block'; ?>; margin-bottom: 10px;">
+                        <img src="/<?php echo htmlspecialchars($row['state_association_stamp_path']); ?>" alt="State Association Stamp" style="max-width: 200px; max-height: 200px; display: inline-block;">
+                    </div>
+                    <div id="image_preview_state_association_stamp" style="display: none; margin-bottom: 10px;">
+                        <img id="preview_state_association_stamp" src="#" alt="Image Preview" style="max-width: 200px; max-height: 200px; display: inline-block;">
+                    </div>
+                    <button type="button" id="remove_state_association_stamp" class="btn btn-danger mt-2">Remove Photo</button>
+                    <input type="hidden" id="remove_state_association_stamp_path" name="remove_state_association_stamp_path" value="<?php echo htmlspecialchars($row['state_association_stamp_path']); ?>">
+                </td>
+            </tr>
+        </table>
+
+
 		<hr>
 
         <div class="form-group">
@@ -507,10 +692,158 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         </div>
                     </div>
                 </div>
+                <a href="/individual_entry_form_pdf_1/<?php echo $uri_segments[1]; ?>" class="btn btn-success" target="_blank"><span class="glyphicon glyphicon-file"></span> PDF 1</a>
+                <a href="/individual_entry_form_pdf_2/<?php echo $uri_segments[1]; ?>" class="btn btn-success" target="_blank"><span class="glyphicon glyphicon-file"></span> PDF 2</a>
+                <!-- <a href="/individual_entry_form" class="btn btn-default">Cancel</a> -->
             <?php endif; ?>
-            <a href="/individual_entry_form_pdf/<?php echo $uri_segments[1]; ?>" class="btn btn-success" target="_blank"><span class="glyphicon glyphicon-file"></span> PDF</a>
-            <a href="/individual_entry_form_pdf_2/<?php echo $uri_segments[1]; ?>" class="btn btn-success" target="_blank"><span class="glyphicon glyphicon-file"></span> PDF 2</a>
-            <!-- <a href="/individual_entry_form" class="btn btn-default">Cancel</a> -->
         </div>
     </form>
 </div>
+
+<script>
+    function calculateAge() {
+        const dob = document.getElementById("date_of_birth").value;
+        const ageField = document.getElementById("age");
+
+        if (dob) {
+            const dobDate = new Date(dob);
+            const today = new Date();
+            let age = today.getFullYear() - dobDate.getFullYear();
+            const monthDifference = today.getMonth() - dobDate.getMonth();
+
+            // Adjust age if the birthday hasn't occurred yet this year
+            if (monthDifference < 0 || (monthDifference === 0 && today.getDate() < dobDate.getDate())) {
+                age--;
+            }
+
+            ageField.value = age;
+        } else {
+            ageField.value = '';
+        }
+    }
+
+    // Attach calculateAge function to keyup and change events
+    document.getElementById("date_of_birth").addEventListener("keyup", calculateAge);
+    document.getElementById("date_of_birth").addEventListener("change", calculateAge);
+
+    // JavaScript to handle the file input and preview
+    document.getElementById('photo_path').addEventListener('change', function(event) {
+        const file = event.target.files[0];
+        const previewImg = document.getElementById('preview_img');
+        const imagePreview = document.getElementById('image_preview');
+        const currentPhotoDisplay = document.getElementById('current_photo_display');
+        document.getElementById('remove_photo_path').value = document.getElementById('photo_path').value;
+
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImg.src = e.target.result;
+                imagePreview.style.display = 'block'; // Show the preview
+                currentPhotoDisplay.style.display = 'none'; // Hide current photo display
+            };
+            reader.readAsDataURL(file);
+        } else {
+            imagePreview.style.display = 'none'; // Hide preview if no file is selected
+            currentPhotoDisplay.style.display = 'block'; // Show current photo display if no new file is selected
+        }
+    });
+
+    // JavaScript to clear the photo and hide the preview
+    document.getElementById('remove_photo').addEventListener('click', function() {
+        document.getElementById('photo_path').value = ""; // Clear the file input
+        document.getElementById('remove_photo_path').value = ""; // Clear the file input
+        document.getElementById('image_preview').style.display = 'none'; // Hide the preview
+        document.getElementById('current_photo_display').style.display = 'none'; // Show the current photo display
+    });
+
+    // Function to handle file input change and preview for signatures
+    function setupFileInputPreview(inputId, previewImgId, currentDisplayId, removeButtonId, removePathId) {
+        document.getElementById(inputId).addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            const previewImg = document.getElementById(previewImgId);
+            const imagePreview = document.getElementById(previewImgId).parentElement; // Get the parent div
+            const currentPhotoDisplay = document.getElementById(currentDisplayId);
+
+            // Set the remove path value
+            document.getElementById(removePathId).value = document.getElementById(inputId).value;
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImg.src = e.target.result;
+                    imagePreview.style.display = 'block'; // Show the preview
+                    currentPhotoDisplay.style.display = 'none'; // Hide current photo display
+                };
+                reader.readAsDataURL(file);
+            } else {
+                imagePreview.style.display = 'none'; // Hide preview if no file is selected
+                currentPhotoDisplay.style.display = 'block'; // Show current photo display if no new file is selected
+            }
+        });
+
+        // Clear the photo and hide the preview
+        document.getElementById(removeButtonId).addEventListener('click', function() {
+            document.getElementById(inputId).value = ""; // Clear the file input
+            document.getElementById(removePathId).value = ""; // Clear the remove path
+            document.getElementById(previewImgId).parentElement.style.display = 'none'; // Hide the preview
+            document.getElementById(currentDisplayId).style.display = 'none'; // Show the current photo display
+        });
+    }
+
+    // Setup event listeners for each signature input
+    setupFileInputPreview('signature_parent_guardian_path', 'preview_signature_parent_guardian', 'current_signature_parent_guardian_display', 'remove_signature_parent_guardian', 'remove_signature_parent_guardian_path');
+    setupFileInputPreview('signature_participant_path', 'preview_signature_participant', 'current_signature_participant_display', 'remove_signature_participant', 'remove_signature_participant_path');
+    setupFileInputPreview('signature_president_secretary_path', 'preview_signature_president_secretary', 'current_signature_president_secretary_display', 'remove_signature_president_secretary', 'remove_signature_president_secretary_path');
+    setupFileInputPreview('state_association_stamp_path', 'preview_state_association_stamp', 'current_state_association_stamp_display', 'remove_state_association_stamp', 'remove_state_association_stamp_path');
+</script>
+
+<style>
+    /* Custom styles for the file input */
+    .custom-file {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center; /* Center content horizontally */
+        margin: 0 auto; /* Center the file input container */
+        max-width: 300px; /* Limit maximum width for better responsiveness */
+    }
+
+    .custom-file-input {
+        opacity: 0; /* Hide the default file input */
+        position: absolute;
+        z-index: 1;
+        cursor: pointer; /* Change cursor to pointer */
+        width: 100%; /* Make the file input cover the entire label */
+        height: 100%; /* Make the file input cover the entire label */
+    }
+
+    .custom-file-label {
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 12px 20px; /* Add padding for better spacing */
+        background-color: #f8f9fa;
+        color: #495057;
+        transition: background-color 0.3s, color 0.3s, border-color 0.3s; /* Add border color transition */
+        width: 100%; /* Ensure the label takes full width */
+        text-align: center; /* Center the text */
+    }
+
+    .custom-file-label:hover {
+        background-color: #e2e6ea;
+    }
+
+    .custom-file-input:focus + .custom-file-label {
+        border-color: #80bdff; /* Change border color on focus */
+        outline: 0;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25); /* Add shadow on focus */
+    }
+
+    /* Optional: Style for the label when a file is selected */
+    .custom-file-input:valid + .custom-file-label::after {
+        content: "✓"; /* Add a checkmark icon or text */
+        color: green; /* Change color to indicate success */
+        margin-left: 10px; /* Space between text and checkmark */
+    }
+
+
+</style>

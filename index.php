@@ -1,134 +1,119 @@
 <?php
-	session_start();
+session_start();
+include_once('connection.php'); // Include database connection
+
+// Check if the request is an AJAX request and is a POST request
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['date_of_birth']) && isset($_POST['name'])) {
+    $date_of_birth = $_POST['date_of_birth'];
+    $name = $_POST['name'];
+
+    // Prepare a query to check if there's a matching row in the table
+    $stmt = $conn->prepare("SELECT id FROM individual_entry_form WHERE date_of_birth = ? AND name = ?");
+    $stmt->bind_param("ss", $date_of_birth, $name); // Bind parameters to prevent SQL injection
+    $stmt->execute();
+    $stmt->store_result();
+
+    // Check if a match was found
+    if ($stmt->num_rows > 0) {
+        $stmt->bind_result($id);
+        $stmt->fetch();
+        // Return the ID as a JSON response
+        echo json_encode(['status' => 'success', 'id' => $id]);
+    } else {
+        // No match found
+        echo json_encode(['status' => 'error', 'message' => 'No details found.']);
+    }
+
+    $stmt->close();
+    $conn->close();
+    exit(); // End the script after sending the response
+}
 ?>
+
+
 <!DOCTYPE html>
 <html>
 <head>
-	<meta charset="utf-8">
-	<title>CRUD Operation using PHP/MySQLi with DataTable and PDF Generator using TCPDF</title>
-	<link rel="stylesheet" type="text/css" href="bootstrap/css/bootstrap.min.css">
-	<link rel="stylesheet" type="text/css" href="datatable/dataTable.bootstrap.min.css">
-	<style>
-		.height10{
-			height:10px;
-		}
-		.mtop10{
-			margin-top:10px;
-		}
-		.modal-label{
-			position:relative;
-			top:7px
-		}
-	</style>
+    <meta charset="utf-8">
+    <title>Individual Entry Form</title>
+    <link rel="stylesheet" type="text/css" href="bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="datatable/dataTable.bootstrap.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa; /* Light background color */
+        }
+        .form-container {
+            margin-top: 50px; /* Spacing from the top */
+            padding: 30px; /* Padding around the form */
+            border-radius: 8px; /* Rounded corners */
+            background-color: #ffffff; /* White background for the form */
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* Subtle shadow effect */
+        }
+        .form-header {
+            margin-bottom: 20px; /* Space below the header */
+        }
+        .alert {
+            display: none; /* Initially hidden */
+        }
+    </style>
 </head>
 <body>
 <div class="container">
-	<h1 class="page-header text-center">CRUD Operation with DataTable and PDF</h1>
-	<div class="row">
-		<div class="col-sm-8 col-sm-offset-2">
-			<div class="row">
-			<?php
-				if(isset($_SESSION['error'])){
-					echo
-					"
-					<div class='alert alert-danger text-center'>
-						<button class='close'>&times;</button>
-						".$_SESSION['error']."
-					</div>
-					";
-					unset($_SESSION['error']);
-				}
-				if(isset($_SESSION['success'])){
-					echo
-					"
-					<div class='alert alert-success text-center'>
-						<button class='close'>&times;</button>
-						".$_SESSION['success']."
-					</div>
-					";
-					unset($_SESSION['success']);
-				}
-			?>
-			</div>
-			<div class="row">
-				<a href="#addnew" data-toggle="modal" class="btn btn-primary"><span class="glyphicon glyphicon-plus"></span> New</a>
-				<a href="print_pdf.php" class="btn btn-success pull-right"><span class="glyphicon glyphicon-print"></span> PDF</a>
-			</div>
-			<div class="height10">
-			</div>
-			<div class="row">
-				<table id="myTable" class="table table-bordered table-striped">
-					<thead>
-						<th>ID</th>
-						<th>Firstname</th>
-						<th>Lastname</th>
-						<th>Address</th>
-						<th>Action</th>
-					</thead>
-					<tbody>
-						<?php
-							include_once('connection.php');
-							$sql = "SELECT * FROM members";
-
-							//use for MySQLi-OOP
-							$query = $conn->query($sql);
-							while($row = $query->fetch_assoc()){
-								echo 
-								"<tr>
-									<td>".$row['id']."</td>
-									<td>".$row['firstname']."</td>
-									<td>".$row['lastname']."</td>
-									<td>".$row['address']."</td>
-									<td>
-										<a href='#edit_".$row['id']."' class='btn btn-success btn-sm' data-toggle='modal'><span class='glyphicon glyphicon-edit'></span> Edit</a>
-										<a href='#delete_".$row['id']."' class='btn btn-danger btn-sm' data-toggle='modal'><span class='glyphicon glyphicon-trash'></span> Delete</a>
-									</td>
-								</tr>";
-								include('edit_delete_modal.php');
-							}
-							/////////////////
-
-							//use for MySQLi Procedural
-							// $query = mysqli_query($conn, $sql);
-							// while($row = mysqli_fetch_assoc($query)){
-							// 	echo
-							// 	"<tr>
-							// 		<td>".$row['id']."</td>
-							// 		<td>".$row['firstname']."</td>
-							// 		<td>".$row['lastname']."</td>
-							// 		<td>".$row['address']."</td>
-							// 		<td>
-							// 			<a href='#edit_".$row['id']."' class='btn btn-success btn-sm' data-toggle='modal'><span class='glyphicon glyphicon-edit'></span> Edit</a>
-							// 			<a href='#delete_".$row['id']."' class='btn btn-danger btn-sm' data-toggle='modal'><span class='glyphicon glyphicon-trash'></span> Delete</a>
-							// 		</td>
-							// 	</tr>";
-							// 	include('edit_delete_modal.php');
-							// }
-							/////////////////
-
-						?>
-					</tbody>
-				</table>
-			</div>
-		</div>
+	<div class="col-sm-8 col-sm-offset-2">
+	    <div class="form-container">
+	        <h1 class="text-center form-header">Individual Entry Form Check</h1>
+	        <form id="entryCheckForm"> <!-- Form for checking existing entries -->
+	            <div class="form-group">
+	                <label for="name">Name:</label>
+	                <input type="text" name="name" class="form-control" id="name" placeholder="Enter your name" required>
+	            </div>
+	            <div class="form-group">
+	                <label for="date_of_birth">Date of Birth:</label>
+	                <input type="date" name="date_of_birth" id="date_of_birth" class="form-control" required>
+	            </div>
+	            <button type="submit" class="btn btn-primary btn-block">Check Entry</button> <!-- Submit button -->
+	        </form>
+	        <div class="text-center mt-3">
+	            <a href="/individual_entry_form/0" class="btn btn-link">New User? Create New Entry</a> 
+	        </div>
+	        <div id="alertMessage" class="alert alert-danger mt-3"></div> <!-- Message display -->
+	    </div>
 	</div>
 </div>
-<?php include('add_modal.php') ?>
 
 <script src="jquery/jquery.min.js"></script>
 <script src="bootstrap/js/bootstrap.min.js"></script>
-<script src="datatable/jquery.dataTables.min.js"></script>
-<script src="datatable/dataTable.bootstrap.min.js"></script>
-<!-- generate datatable on our table -->
 <script>
-$(document).ready(function(){
-	//inialize datatable
-    $('#myTable').DataTable();
+$(document).ready(function() {
+    $('#entryCheckForm').on('submit', function(event) {
+        event.preventDefault(); // Prevent default form submission
 
-    //hide alert
-    $(document).on('click', '.close', function(){
-    	$('.alert').hide();
-    })
+        // Gather form data
+        var formData = {
+            name: $('#name').val(),
+            date_of_birth: $('#date_of_birth').val()
+        };
+
+        // Make AJAX request
+        $.ajax({
+            type: 'POST',
+            url: 'index.php', // Same page to handle the AJAX request
+            data: formData,
+            dataType: 'json',
+            success: function(response) {
+                if (response.status === 'success') {
+                    // Redirect to the specific entry page if a match is found
+                    window.location.href = '/individual_entry_form/' + response.id;
+                } else {
+                    // Display error message if no match is found
+                    $('#alertMessage').text(response.message).show(); // Show message
+                }
+            },
+            error: function() {
+                $('#alertMessage').text('An error occurred while checking the entry.').show(); // Show error message
+            }
+        });
+    });
 });
 </script>
 </body>

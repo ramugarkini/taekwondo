@@ -115,23 +115,27 @@ $pdf->Ln(5);
 
 // Name row
 $y = $pdf->GetY();
-$pdf->Cell(40, 5, 'NAME', 'LTR', 0, 'C');
-$pdf->Cell(100, 10, ($row['name'] ?? ''), 1, 0, 'C');
-$pdf->MultiCell(0, 30, 'PASTE ONE PASSPORT SIZE PHOTOGRAPH', 'LTR', 'C');
+$pdf->Cell(40, 6, 'NAME', 'LTR', 0, 'C');
+$pdf->Cell(103, 12, ($row['name'] ?? ''), 1, 0, 'C');
+$pdf->MultiCell(0, 36, 'PASTE ONE PASSPORT SIZE PHOTOGRAPH', 'LTR', 'C');
+if (!empty($row['photo_path']) && file_exists($row['photo_path'])) {
+    // Add the image to the PDF
+    $pdf->Image($row['photo_path'], 159, 102, 35, 35);
+}
 
 // $pdf->Cell(0, 50, '', 'LR', 0, 'C');
-$pdf->SetY($y + 5);
-$pdf->Cell(40, 5, '(IN CAPITAL LETTERS)', 'LRB', 1, 'C');
+$pdf->SetY($y + 6);
+$pdf->Cell(40, 6, '(IN CAPITAL LETTERS)', 'LRB', 1, 'C');
 
 // Date of Birth and Age row
-$pdf->Cell(40, 10, 'Date of Birth', 1, 0, 'C');
-$pdf->Cell(30, 10, ($row['date_of_birth'] ?? ''), 1, 0, 'C');
-$pdf->Cell(40, 10, 'Age', 1, 0, 'C');
-$pdf->Cell(30, 10, ($row['age'] ?? ''), 1, 1, 'C');
+$pdf->Cell(40, 12, 'Date of Birth', 1, 0, 'C');
+$pdf->Cell(30, 12, ($row['date_of_birth'] ?? ''), 1, 0, 'C');
+$pdf->Cell(40, 12, 'Age', 1, 0, 'C');
+$pdf->Cell(33, 12, ($row['age'] ?? ''), 1, 1, 'C');
 
 // Parent / Guardian Name row
-$pdf->Cell(40, 10, 'Parent / Guardian Name', 1, 0, 'C');
-$pdf->Cell(100, 10, ($row['parent_guardian_name'] ?? ''), 1, 1, 'C');
+$pdf->Cell(40, 12, 'Parent / Guardian Name', 1, 0, 'C');
+$pdf->Cell(103, 12, ($row['parent_guardian_name'] ?? ''), 1, 1, 'C');
 
 $pdf->MultiCell(0, 10, 'COPY OF CORPORATION / MUNICIPAL BIRTH CERTIFICATE, TFI ID CARD, COLOUR BELT CERTIFICATE & KUKKIWON CERTIFICATE SHOULD BE ENCLOSED COMPULSORILY AND ORIGINALS SHOULD BE SHOWN AT THE TIME OF WEIGH IN.', 'TB', 'C', 0);
 
@@ -157,13 +161,25 @@ $pdf->MultiCell(0, 10, 'I, the undersigned do hereby solemnly affirm, declare an
 
 // Signatures section
 // Second row for empty signature lines (with top and bottom borders)
-$pdf->Cell(90, 10, '', 'TRB', 0); // Top and bottom border
-$pdf->Cell(0, 10, '', 'LTB', 1); // Top and bottom border
+$pdf->Cell(90, 16, '', 'TRB', 0); // Top and bottom border
+$pdf->Cell(0, 16, '', 'LTB', 1); // Top and bottom border
 
 // First row with "Signature of Parent/Guardian" and "Signature of Participant"
+if (!empty($row['signature_parent_guardian_path']) && file_exists($row['signature_parent_guardian_path'])) {
+    $pdf->Image($row['signature_parent_guardian_path'], 35, 210, 50, 15);
+}
 $pdf->Cell(90, 10, 'Signature of Parent/Guardian', 'TRB', 0, 'C'); // Only top border
+
+if (!empty($row['signature_participant_path']) && file_exists($row['signature_participant_path'])) {
+    $pdf->Image($row['signature_participant_path'], 120, 210, 50, 15);
+}
 $pdf->Cell(0, 10, 'Signature of Participant', 'TB', 1, 'C'); // Only top border
 $pdf->Ln(10);
+$pdf->Ln(10);
+
+if (!empty($row['signature_president_secretary_path']) && file_exists($row['signature_president_secretary_path'])) {
+    $pdf->Image($row['signature_president_secretary_path'], 80, 240, 50, 15);
+}
 
 $pdf->Cell(0, 0, 'Signature of President / Secretary – Affiliated State Taekwondo Association', 'TB', 1, 'C');
 $pdf->Ln(5);
@@ -185,4 +201,4 @@ $pdf->Cell(0, 5, '', 1, 1);
 $pdf->Ln(5);
 
 // Output the PDF
-$pdf->Output('taekwondo_entry_form.pdf', 'I');
+$pdf->Output("Individual Entry Form"." ".$row['name'].'_2.pdf', 'I');

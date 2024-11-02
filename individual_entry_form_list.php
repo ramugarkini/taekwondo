@@ -65,7 +65,7 @@
                                     <td>".$row['weight_category']."</td>
                                     <td>".$row['state_organization_name']."</td>
                                     <td>
-                                        <a href='individual_entry_form/".$row['id']."' class='btn btn-success btn-sm' data-toggle='modal'><span class='glyphicon glyphicon-edit'></span> Edit</a>
+                                        <a href='individual_entry_form/".$row['id']."' class='btn btn-success' data-toggle='modal'><span class='glyphicon glyphicon-edit'></span> Edit</a>
                                     </td>
                                 </tr>";
                             }
