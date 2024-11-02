@@ -153,7 +153,7 @@ $pdf->Cell(101, 10, ($row['state_organization_name'] ?? ''), 1, 1, 'C'); // Full
 
 // Date of Birth and Age row
 $pdf->Cell(40, 10, 'Date of Birth', 1, 0, 'C');
-$pdf->Cell(40, 10, ($row['date_of_birth'] ?? ''), 1, 0, 'C');
+$pdf->Cell(40, 10, (date("d-m-Y", strtotime($row['date_of_birth'])) ?? ''), 1, 0, 'C');
 $pdf->Cell(40, 10, 'Age', 1, 0, 'C');
 $pdf->Cell(21, 10, ($row['age'] ?? ''), 1, 1, 'C');
 

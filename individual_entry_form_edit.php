@@ -666,7 +666,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 		<hr>
 
         <div class="form-group">
-            <button type="submit" name="<?php echo $mode == 'Edit' ? 'update' : 'add'; ?>" class="btn btn-primary"><span class="glyphicon glyphicon-floppy-disk"></span>
+            <button type="submit" name="<?php echo $mode == 'Edit' ? 'update' : 'add'; ?>" class="btn btn-success"><span class="glyphicon glyphicon-floppy-disk"></span>
                 <?php echo $mode == 'Edit' ? 'Update' : 'Save'; ?>
             </button>
 
@@ -692,8 +692,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         </div>
                     </div>
                 </div>
-                <a href="/individual_entry_form_pdf_1/<?php echo $uri_segments[1]; ?>" class="btn btn-success" target="_blank"><span class="glyphicon glyphicon-file"></span> PDF 1</a>
-                <a href="/individual_entry_form_pdf_2/<?php echo $uri_segments[1]; ?>" class="btn btn-success" target="_blank"><span class="glyphicon glyphicon-file"></span> PDF 2</a>
+                <a href="/individual_entry_form_pdf_1/<?php echo $uri_segments[1]; ?>" class="btn btn-danger" target="_blank"><span class="glyphicon glyphicon-file"></span> PDF 1</a>
+                <a href="/individual_entry_form_pdf_2/<?php echo $uri_segments[1]; ?>" class="btn btn-danger" target="_blank"><span class="glyphicon glyphicon-file"></span> PDF 2</a>
+                <a href="/individual_entry_form_pdf_3/<?php echo $uri_segments[1]; ?>" class="btn btn-danger" target="_blank"><span class="glyphicon glyphicon-file"></span> PDF 3</a>
                 <!-- <a href="/individual_entry_form" class="btn btn-default">Cancel</a> -->
             <?php endif; ?>
         </div>

@@ -129,7 +129,7 @@ $pdf->Cell(40, 6, '(IN CAPITAL LETTERS)', 'LRB', 1, 'C');
 
 // Date of Birth and Age row
 $pdf->Cell(40, 12, 'Date of Birth', 1, 0, 'C');
-$pdf->Cell(30, 12, ($row['date_of_birth'] ?? ''), 1, 0, 'C');
+$pdf->Cell(30, 12, (date("d-m-Y", strtotime($row['date_of_birth'])) ?? ''), 1, 0, 'C');
 $pdf->Cell(40, 12, 'Age', 1, 0, 'C');
 $pdf->Cell(33, 12, ($row['age'] ?? ''), 1, 1, 'C');
 
