@@ -25,6 +25,9 @@ if (isset($uri_segments[1]) && intval(decrypt($uri_segments[1], $key)) > 0) {
         header("Location: /");
         exit();
     }
+} else {
+    header('Location: /');
+    exit();
 }
 
 // Define the file path
