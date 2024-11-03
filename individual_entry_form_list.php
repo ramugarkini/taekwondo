@@ -7,7 +7,7 @@
         <h1 class="page-header text-center" style="margin: 0 auto; flex-grow: 1; text-align: center;"> Individual Entry Form</h1>
 
         <!-- New Button -->
-        <a href="individual_entry_form/0" class="btn btn-primary" style="margin-left: auto;">
+        <a href="/individual_entry_form/<?php echo encrypt(0, $key); ?>" class="btn btn-primary" style="margin-left: auto;">
             <span class="glyphicon glyphicon-plus"></span> New
         </a>
     </div>
@@ -65,7 +65,7 @@
                                     <td>".$row['weight_category']."</td>
                                     <td>".$row['state_organization_name']."</td>
                                     <td>
-                                        <a href='individual_entry_form/".$row['id']."' class='btn btn-success' data-toggle='modal'><span class='glyphicon glyphicon-edit'></span> Edit</a>
+                                        <a href='/individual_entry_form/".encrypt($row['id'], $key)."' class='btn btn-success' data-toggle='modal'><span class='glyphicon glyphicon-edit'></span> Edit</a>
                                     </td>
                                 </tr>";
                             }

@@ -1,5 +1,6 @@
 <?php
 include_once('connection.php');
+include_once('crypto.php');
 
 // Get the full request URI
 $request_uri = $_SERVER['REQUEST_URI'];
@@ -8,8 +9,8 @@ $request_uri = $_SERVER['REQUEST_URI'];
 $uri_segments = explode('/', trim($request_uri, '/'));
 
 // Check if an ID is passed in the URL
-if (isset($uri_segments[1]) && intval($uri_segments[1]) > 0) {
-    $id = intval($uri_segments[1]);
+if (isset($uri_segments[1]) && intval(decrypt($uri_segments[1], $key)) > 0) {
+    $id = intval(decrypt($uri_segments[1], $key));
 
     // Fetch data from the database based on the ID
     $query = $conn->prepare("SELECT name FROM individual_entry_form WHERE id = ?");

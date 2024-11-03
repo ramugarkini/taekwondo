@@ -1,6 +1,7 @@
 <?php
 include_once('connection.php');
 require_once('tcpdf/tcpdf.php');
+include_once('crypto.php');
 
 // Get the full request URI
 $request_uri = $_SERVER['REQUEST_URI'];
@@ -9,8 +10,8 @@ $request_uri = $_SERVER['REQUEST_URI'];
 $uri_segments = explode('/', trim($request_uri, '/'));
 
 // Check if an ID is passed in the URL for editing
-if (isset($uri_segments[1])) {
-    $id = intval($uri_segments[1]);
+if (isset($uri_segments[1]) && intval(decrypt($uri_segments[1], $key)) > 0) {
+    $id = intval(decrypt($uri_segments[1], $key));
 
     // Fetch data from the database if editing
     $query = $conn->prepare("SELECT * FROM individual_entry_form WHERE id = ?");
@@ -214,10 +215,10 @@ $pdf->SetFont('helvetica', 'B', 10);
 $pdf->Cell(0, 0, 'State Association with stamp', 'B', 1, 'C'); // Top and bottom border
 
 if (!empty($row['signature_president_secretary_path']) && file_exists($row['signature_president_secretary_path'])) {
-    $pdf->Image($row['signature_president_secretary_path'], 80, 260, 50, 15);
+    $pdf->Image($row['signature_president_secretary_path'], 80, 263, 50, 15);
 }
 if (!empty($row['state_association_stamp_path']) && file_exists($row['state_association_stamp_path'])) {
-    $pdf->Image($row['state_association_stamp_path'], 80, 270, 50, 15);
+    $pdf->Image($row['state_association_stamp_path'], 95, 260, 26, 26);
 }
 
 // Output the PDF

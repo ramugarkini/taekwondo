@@ -1,6 +1,7 @@
 <?php
 session_start();
 include_once('connection.php'); // Include database connection
+include 'crypto.php'; 
 
 // Check if the request is an AJAX request and is a POST request
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['date_of_birth']) && isset($_POST['name'])) {
@@ -18,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['date_of_birth']) && i
         $stmt->bind_result($id);
         $stmt->fetch();
         // Return the ID as a JSON response
-        echo json_encode(['status' => 'success', 'id' => $id]);
+        echo json_encode(['status' => 'success', 'id' => encrypt($id, $key)]);
     } else {
         // No match found
         echo json_encode(['status' => 'error', 'message' => 'No details found.']);
@@ -74,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['date_of_birth']) && i
 	            <button type="submit" class="btn btn-primary btn-block">Check Entry</button> <!-- Submit button -->
 	        </form>
 	        <div class="text-center mt-3">
-	            <a href="/individual_entry_form/0" class="btn btn-link">New User? Create New Entry</a> 
+	            <a href="/individual_entry_form/<?php echo encrypt(0, $key); ?>" class="btn btn-link">New User? Create New Entry</a> 
 	        </div>
 	        <div id="alertMessage" class="alert alert-danger mt-3"></div> <!-- Message display -->
 	    </div>

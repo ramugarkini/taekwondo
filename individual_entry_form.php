@@ -10,6 +10,9 @@ $uri_segments = explode('/', trim($request_uri, '/'));
 
 // Check for the individual entry form path
 $base_path = 'individual_entry_form';
+
+include 'crypto.php';
+
 ?>
 
 <!DOCTYPE html>
@@ -29,15 +32,17 @@ $base_path = 'individual_entry_form';
     <?php 
         // Adjust the condition based on your needs
         // if (!isset($uri_segments[1])) { 
-        if ($uri_segments[0] === $base_path && count($uri_segments) === 1) { 
+        if (count($uri_segments) === 2 && $uri_segments[0] === $base_path && $uri_segments[1] == "__") { 
             include("individual_entry_form_list.php");
-        } elseif ($uri_segments[0] === $base_path && count($uri_segments) === 2) {
+        } elseif (count($uri_segments) === 2 && $uri_segments[0] === $base_path && is_numeric(decrypt($uri_segments[1], $key)) && decrypt($uri_segments[1], $key) >= 0) {
             include("individual_entry_form_edit.php");
         } else {
             // Optionally handle cases where the number of segments does not match expected values
-            header("HTTP/1.0 404 Not Found");
-            echo "<div class='alert alert-danger'>Invalid request.</div>";
-            exit;
+            // header("HTTP/1.0 404 Not Found");
+            // echo "<div class='alert alert-danger'>Invalid request.</div>";
+            // exit;
+            header('Location: /');
+            exit();
         }
     ?>
 

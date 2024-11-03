@@ -4,8 +4,8 @@ $mode = 'Add';
 $id = 0;
 
 // Check if an ID is passed in the URL for editing
-if (isset($uri_segments[1]) && intval($uri_segments[1]) > 0) {
-    $id = intval($uri_segments[1]);
+if (isset($uri_segments[1]) && intval(decrypt($uri_segments[1], $key)) > 0) {
+    $id = intval(decrypt($uri_segments[1], $key));
     $mode = 'Edit';
 
     // Fetch data from the database if editing
@@ -18,7 +18,7 @@ if (isset($uri_segments[1]) && intval($uri_segments[1]) > 0) {
     // If no data is found for the given ID, redirect or show an error
     if (!$row) {
         $_SESSION['error'] = "Record not found!";
-        header("Location: /individual_entry_form");
+        header("Location: /");
         exit();
     }
 }
@@ -127,7 +127,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             // Execute update query
             if ($conn->query($sql)) {
                 $_SESSION['success'] = 'Entry Added Successfully';
-                header("Location: /individual_entry_form/$last_id");
+                $enc_last_id = encrypt($last_id, $key);
+                header("Location: /individual_entry_form/$enc_last_id");
                 exit();
             }
 
@@ -236,7 +237,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         // Execute update query
         if ($conn->query($sql)) {
             $_SESSION['success'] = 'Changes Updated Successfully';
-            header("Location: /individual_entry_form/$id");
+            $enc_id = encrypt($id, $key);
+            header("Location: /individual_entry_form/$enc_id");
             exit();
         } else {
             $_SESSION['error'] = 'Something went wrong while updating: ' . $conn->error;
@@ -265,8 +267,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
             // Execute delete query
             if ($deleteStmt->execute()) {
-                $_SESSION['success'] = 'Entry Deleted Successfully';
-                header("Location: /individual_entry_form");
+                // $_SESSION['success'] = 'Entry Deleted Successfully';
+                header("Location: /");
                 exit();
             } else {
                 $_SESSION['error'] = 'Something went wrong in deleting the entry: ' . $deleteStmt->error;
@@ -339,6 +341,54 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         border-left: none; /* Remove left border from the second td */
     }
 
+</style>
+<style>
+    /* Custom styles for the file input */
+    .custom-file {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center; /* Center content horizontally */
+        margin: 0 auto; /* Center the file input container */
+        max-width: 300px; /* Limit maximum width for better responsiveness */
+    }
+
+    .custom-file-input {
+        opacity: 0; /* Hide the default file input */
+        position: absolute;
+        z-index: 1;
+        cursor: pointer; /* Change cursor to pointer */
+        width: 100%; /* Make the file input cover the entire label */
+        height: 100%; /* Make the file input cover the entire label */
+    }
+
+    .custom-file-label {
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 12px 20px; /* Add padding for better spacing */
+        background-color: #f8f9fa;
+        color: #495057;
+        transition: background-color 0.3s, color 0.3s, border-color 0.3s; /* Add border color transition */
+        width: 100%; /* Ensure the label takes full width */
+        text-align: center; /* Center the text */
+    }
+
+    .custom-file-label:hover {
+        background-color: #e2e6ea;
+    }
+
+    .custom-file-input:focus + .custom-file-label {
+        border-color: #80bdff; /* Change border color on focus */
+        outline: 0;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25); /* Add shadow on focus */
+    }
+
+    /* Optional: Style for the label when a file is selected */
+    .custom-file-input:valid + .custom-file-label::after {
+        content: "✓"; /* Add a checkmark icon or text */
+        color: green; /* Change color to indicate success */
+        margin-left: 10px; /* Space between text and checkmark */
+    }
 </style>
 
 <div class="container">
@@ -692,9 +742,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         </div>
                     </div>
                 </div>
-                <a href="/individual_entry_form_pdf_1/<?php echo $uri_segments[1]; ?>" class="btn btn-danger" target="_blank"><span class="glyphicon glyphicon-file"></span> PDF 1</a>
-                <a href="/individual_entry_form_pdf_2/<?php echo $uri_segments[1]; ?>" class="btn btn-danger" target="_blank"><span class="glyphicon glyphicon-file"></span> PDF 2</a>
-                <a href="/individual_entry_form_pdf_3/<?php echo $uri_segments[1]; ?>" class="btn btn-danger" target="_blank"><span class="glyphicon glyphicon-file"></span> PDF 3</a>
+                <a href="/individual_entry_form_pdf_1/<?php echo encrypt(decrypt($uri_segments[1], $key), $key); ?>" class="btn btn-danger" target="_blank"><span class="glyphicon glyphicon-file"></span> PDF 1</a>
+                <a href="/individual_entry_form_pdf_2/<?php echo encrypt(decrypt($uri_segments[1], $key), $key); ?>" class="btn btn-danger" target="_blank"><span class="glyphicon glyphicon-file"></span> PDF 2</a>
+                <a href="/individual_entry_form_pdf_3/<?php echo encrypt(decrypt($uri_segments[1], $key), $key); ?>" class="btn btn-danger" target="_blank"><span class="glyphicon glyphicon-file"></span> PDF 3</a>
                 <!-- <a href="/individual_entry_form" class="btn btn-default">Cancel</a> -->
             <?php endif; ?>
         </div>
@@ -798,53 +848,3 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     setupFileInputPreview('state_association_stamp_path', 'preview_state_association_stamp', 'current_state_association_stamp_display', 'remove_state_association_stamp', 'remove_state_association_stamp_path');
 </script>
 
-<style>
-    /* Custom styles for the file input */
-    .custom-file {
-        position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: center; /* Center content horizontally */
-        margin: 0 auto; /* Center the file input container */
-        max-width: 300px; /* Limit maximum width for better responsiveness */
-    }
-
-    .custom-file-input {
-        opacity: 0; /* Hide the default file input */
-        position: absolute;
-        z-index: 1;
-        cursor: pointer; /* Change cursor to pointer */
-        width: 100%; /* Make the file input cover the entire label */
-        height: 100%; /* Make the file input cover the entire label */
-    }
-
-    .custom-file-label {
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        padding: 12px 20px; /* Add padding for better spacing */
-        background-color: #f8f9fa;
-        color: #495057;
-        transition: background-color 0.3s, color 0.3s, border-color 0.3s; /* Add border color transition */
-        width: 100%; /* Ensure the label takes full width */
-        text-align: center; /* Center the text */
-    }
-
-    .custom-file-label:hover {
-        background-color: #e2e6ea;
-    }
-
-    .custom-file-input:focus + .custom-file-label {
-        border-color: #80bdff; /* Change border color on focus */
-        outline: 0;
-        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25); /* Add shadow on focus */
-    }
-
-    /* Optional: Style for the label when a file is selected */
-    .custom-file-input:valid + .custom-file-label::after {
-        content: "✓"; /* Add a checkmark icon or text */
-        color: green; /* Change color to indicate success */
-        margin-left: 10px; /* Space between text and checkmark */
-    }
-
-
-</style>
