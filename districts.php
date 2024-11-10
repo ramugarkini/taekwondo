@@ -9,18 +9,23 @@ $request_uri = $_SERVER['REQUEST_URI'];
 // Parse the URI to get the path elements
 $uri_segments = explode('/', trim($request_uri, '/'));
 
-// Check for the individual entry form path
-$base_path = 'individual_entry_form';
+// Check for the districts path
+$base_path = 'districts';
 
 include 'crypto.php';
 
+$user_id = $_SESSION['user_details']['user_id'];
+if ($user_id > 1){
+    header('Location: /logout');
+    exit();
+}
 ?>
 
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Individual Entry Form</title>
+    <title>Districts</title>
     <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="/datatable/dataTable.bootstrap.min.css">
     <style>
@@ -30,21 +35,16 @@ include 'crypto.php';
     </style>
 </head>
 <body>
-        <div id="wrapper">
-
-        <?php 
-        if (isset($_SESSION['user_details']['user_id'])){ 
-            include("menu.php"); 
-        } 
-        ?>
+    <div id="wrapper">
+        <?php include("menu.php"); ?>
 
     <?php 
         // Adjust the condition based on your needs
-        if (!isset($uri_segments[1]) && isset($_SESSION['user_details']['user_id'])) { 
+        if (!isset($uri_segments[1])) { 
         // if (count($uri_segments) === 2 && $uri_segments[0] === $base_path && $uri_segments[1] == "__") { 
-            include("individual_entry_form_list.php");
+            include("districts_list.php");
         } elseif (count($uri_segments) === 2 && $uri_segments[0] === $base_path && is_numeric(decrypt($uri_segments[1], $key)) && decrypt($uri_segments[1], $key) >= 0) {
-            include("individual_entry_form_edit.php");
+            include("districts_edit.php");
         } else {
             // Optionally handle cases where the number of segments does not match expected values
             // header("HTTP/1.0 404 Not Found");
@@ -56,6 +56,7 @@ include 'crypto.php';
     ?>
     </div>
     </div>
+
 
 
     <script src="/jquery/jquery.min.js"></script>

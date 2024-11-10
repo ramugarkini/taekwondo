@@ -3,6 +3,12 @@
 $mode = 'Add';
 $id = 0;
 
+// Fetch users from the database
+$stmtc = $conn->prepare("SELECT id, district_name FROM districts");
+$stmtc->execute();
+$resultc = $stmtc->get_result();
+$districts = $resultc->fetch_all(MYSQLI_ASSOC);
+
 // Check if an ID is passed in the URL for editing
 if (isset($uri_segments[1]) && intval(decrypt($uri_segments[1], $key)) > 0) {
     $id = intval(decrypt($uri_segments[1], $key));
@@ -74,6 +80,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $academic_qualification = $_POST['academic_qualification'];
         $name_of_school = $_POST['name_of_school'];
         $board_university_name = $_POST['board_university_name'];
+        $user_id = $_SESSION['user_details']['user_id'] ?? NULL;
+        $district_id = $_POST['district_id'];
 
         $photo_path = '';
         $signature_parent_guardian_path = '';
@@ -91,19 +99,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     current_belt_grade, tfi_id_no, belt_certificate_no, academic_qualification, 
                     name_of_school, board_university_name, signature_parent_guardian_path, 
                     signature_participant_path, signature_president_secretary_path, 
-                    state_association_stamp_path
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                    state_association_stamp_path, user_id, district_id
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
 
         // Bind parameters
-        $stmt->bind_param("sssssssssssssssssssss", 
+        $stmt->bind_param("sssssssssssssssssssssss", 
             $type, $category, $gender, $weight, $weight_category, $name, 
             $photo_path, $state_organization_name, $date_of_birth, $age, 
             $parent_guardian_name, $current_belt_grade, $tfi_id_no, 
             $belt_certificate_no, $academic_qualification, $name_of_school, 
             $board_university_name, $signature_parent_guardian_path, 
             $signature_participant_path, $signature_president_secretary_path, 
-            $state_association_stamp_path
+            $state_association_stamp_path, $user_id, $district_id
         );
 
         // Execute insert query
@@ -156,6 +164,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $academic_qualification = $_POST['academic_qualification'];
         $name_of_school = $_POST['name_of_school'];
         $board_university_name = $_POST['board_university_name'];
+        $user_id = $_SESSION['user_details']['user_id'] ?? NULL;
+        $district_id = $_POST['district_id'];
 
         $existing_photo_path = !empty($row['photo_path']) ? $row['photo_path'] : '';
 
@@ -231,7 +241,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             signature_parent_guardian_path = '$signature_parent_guardian_path', 
             signature_participant_path = '$signature_participant_path', 
             signature_president_secretary_path = '$signature_president_secretary_path', 
-            state_association_stamp_path = '$state_association_stamp_path' 
+            state_association_stamp_path = '$state_association_stamp_path',
+            user_id = '$user_id', 
+            district_id = '$district_id'
         WHERE id = '$id'";
 
         // Execute update query
@@ -286,10 +298,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 ?>
 
 <style>
-    body {
+    /*body {
         font-family: Arial, sans-serif;
         margin: 20px;
-    }
+    }*/
     table {
         width: 100%;
         border-collapse: collapse;
@@ -390,6 +402,72 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         margin-left: 10px; /* Space between text and checkmark */
     }
 </style>
+<style type="text/css">
+    /* Basic styling for the modal overlay */
+    .custom-modal {
+        display: none; /* Hidden by default */
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    /* Modal box styling */
+    .modal-content {
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        max-width: 400px;
+        width: 90%;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        position: relative;
+        text-align: center;
+    }
+
+    /* Header styling */
+    .modal-header h4 {
+        margin: 0;
+    }
+
+    /* Close button styling */
+    .close-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        font-size: 24px;
+        cursor: pointer;
+    }
+
+    /* Footer button styling */
+    .modal-footer {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 20px;
+    }
+
+    .btn {
+        padding: 8px 16px;
+        cursor: pointer;
+        border: none;
+        border-radius: 4px;
+    }
+
+    .btn-secondary {
+        background-color: #ccc;
+        color: #000;
+    }
+
+    .btn-danger {
+        background-color: #d9534f;
+        color: #fff;
+    }
+
+</style>
 
 <div class="container">
     <br>
@@ -400,9 +478,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         </a>
 
         <!-- Center Title -->
-        <h1 class="page-header text-center" style="margin: 0 auto; flex-grow: 1; text-align: center;">
+        <h2 class="page-header text-center" style="margin: 0 auto; flex-grow: 1; text-align: center;">
             <?php echo $mode; ?> Individual Entry Form
-        </h1>
+        </h2>
 
         <!-- New Button -->
         <!-- <a href="/individual_entry_form/0" class="btn btn-primary" style="margin-left: auto;">
@@ -546,7 +624,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
                                 <!-- Button to remove the photo -->
                                 <button type="button" id="remove_photo" class="btn btn-danger mt-2">Remove Photo</button>
-                                <input type="hidden" id="remove_photo_path" name="remove_photo_path" value="<?php echo htmlspecialchars($row['photo_path']); ?>">
+                                <input type="hidden" id="remove_photo_path" name="remove_photo_path" value="<?php echo $row['photo_path'] ?? ''; ?>">
 
         	                </td>
 		                </tr>
@@ -631,8 +709,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 		                    <td class="no-left-border">
 		                    	<input type="text" name="board_university_name" class="form-control" value="<?php echo $row['board_university_name'] ?? ''; ?>" required>
 		                    </td>
-		                    <td class="no-right-border"></td>
-		                    <td class="no-left-border"></td>
+		                    <td class="no-right-border">
+                                <label>District Name <span class="text-danger">*</span></label>
+                            </td>
+		                    <td class="no-left-border">
+                                <select name="district_id" id="districtDropdown" class="form-control" required>
+                                    <option value="">Select District</option>
+                                    <?php $row_district_id = $row['district_id'] ?? $_SESSION['user_details']['district_id'] ?? ''; ?>
+
+                                    <?php foreach ($districts as $district): ?>
+                                        <option value="<?php echo $district['id']; ?>"
+                                            <?php if ($district['id'] == $row_district_id) echo 'selected'; ?>>
+                                            <?php echo $district['district_name']; ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </td>
 		                </tr>
 		            </table>
 		        </td>
@@ -644,7 +736,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 		    <p>I, the undersigned do hereby solemnly affirm, declare and confirm for myself, my heirs, executors & administrators that I indemnify the Promoters/Organizers/Sponsors & its Members, Officials, Participants etc., holding myself personally responsible for all damages, injuries or accidents, claims, demands etc., waiving all prerogative rights, whatsoever related to the above set forth event.</p>
 		</div>
 
-		<table>
+		<table hidden>
             <tr>
                 <td style="text-align: center;">
                     Signature of Parent/Guardian
@@ -721,27 +813,30 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             </button>
 
             <?php if ($mode == 'Edit') : ?>
-                <?php echo "<a href='#delete_".$row['id']."' class='btn btn-danger pull-right' data-toggle='modal'><span class='glyphicon glyphicon-trash'></span> Delete</a>"; ?>
+                <a href="javascript:void(0);" onclick="openModal('delete_<?php echo $row['id']; ?>')" class="btn btn-danger pull-right">
+                    <i class="glyphicon glyphicon-trash"></i> Delete
+                </a>
                 <!-- Delete -->
-                <div class="modal fade" id="delete_<?php echo $row['id']; ?>" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-                    <div class="modal-dialog">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                                <center><h4 class="modal-title" id="myModalLabel">Delete</h4></center>
-                            </div>
-                            <div class="modal-body">    
-                                <p class="text-center">Are you sure you want to Delete</p>
-                                <h2 class="text-center"><?php echo $row['name']; ?></h2>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-default" data-dismiss="modal"><span class="glyphicon glyphicon-remove"></span> Cancel</button>
-                                <!-- <a href="delete.php?id=<?php echo $row['id']; ?>" class="btn btn-danger"><span class="glyphicon glyphicon-trash"></span> Yes</a> -->
+                <div id="delete_<?php echo $row['id']; ?>" class="custom-modal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <span class="close-btn" onclick="closeModal('delete_<?php echo $row['id']; ?>')">&times;</span>
+                            <h4>Confirm Delete</h4>
+                        </div>
+                        <div class="modal-body">
+                            <p>Are you sure you want to delete ?</p>
+                            <h4 class="text-danger"><?php echo $row['name']; ?></h4>
+                        </div>
+                        <div class="modal-footer">
+                            <button onclick="closeModal('delete_<?php echo $row['id']; ?>')" class="btn btn-secondary">Cancel</button>
+                            <form action="" method="POST">
+                                <input type="hidden" name="id" value="<?php echo $id; ?>">
                                 <button type="submit" name="delete" class="btn btn-danger">Delete</button>
-                            </div>
+                            </form>
                         </div>
                     </div>
                 </div>
+
                 <a href="/individual_entry_form_pdf_1/<?php echo encrypt(decrypt($uri_segments[1], $key), $key); ?>" class="btn btn-danger" target="_blank"><span class="glyphicon glyphicon-file"></span> PDF 1</a>
                 <a href="/individual_entry_form_pdf_2/<?php echo encrypt(decrypt($uri_segments[1], $key), $key); ?>" class="btn btn-danger" target="_blank"><span class="glyphicon glyphicon-file"></span> PDF 2</a>
                 <a href="/individual_entry_form_pdf_3/<?php echo encrypt(decrypt($uri_segments[1], $key), $key); ?>" class="btn btn-danger" target="_blank"><span class="glyphicon glyphicon-file"></span> PDF 3</a>
@@ -848,3 +943,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     setupFileInputPreview('state_association_stamp_path', 'preview_state_association_stamp', 'current_state_association_stamp_display', 'remove_state_association_stamp', 'remove_state_association_stamp_path');
 </script>
 
+<script type="text/javascript">
+    // Function to open the modal
+    function openModal(modalId) {
+        document.getElementById(modalId).style.display = 'flex';
+    }
+
+    // Function to close the modal
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+    }
+
+</script>

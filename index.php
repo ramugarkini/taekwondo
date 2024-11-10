@@ -60,8 +60,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['date_of_birth']) && i
 </head>
 <body>
 <div class="container">
+        
 	<div class="col-sm-8 col-sm-offset-2">
 	    <div class="form-container">
+            <!-- Top Right Corner Login Button -->
+            <div class="text-right mb-3">
+                <a href="/login" class="btn btn-secondary">Login</a>
+            </div>
 	        <h1 class="text-center form-header">Individual Entry Form Check</h1>
 	        <form id="entryCheckForm"> <!-- Form for checking existing entries -->
 	            <div class="form-group">

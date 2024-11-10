@@ -26,5 +26,5 @@ function decrypt($ciphertext, $key) {
 }
 
 // Define a secret key (must be 32 bytes for AES-256)
-$key = 'thisisaverysecretkey1234567890'; // You should use a secure method to generate/store your key
+$key = 'thisisaverysecretkeygeneratedbyramugarki1234567890'; // You should use a secure method to generate/store your key
 ?>
