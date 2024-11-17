@@ -19,6 +19,20 @@ if (isset($uri_segments[1]) && intval(decrypt($uri_segments[1], $key)) > 0) {
     $query->execute();
     $result = $query->get_result();
     $row = $result->fetch_assoc();
+    
+    // Fetch individual_entry_form_dates from the database
+    $query2 = $conn->prepare("SELECT * FROM individual_entry_form_dates WHERE id = ?");
+    $query2->bind_param("i", $row['individual_entry_form_date_id']);
+    $query2->execute();
+    $result2 = $query2->get_result();
+    $individual_entry_form_date = $result2->fetch_assoc();
+
+    // Fetch weight_categories from the database
+    $query3 = $conn->prepare("SELECT * FROM weight_categories WHERE id = ?");
+    $query3->bind_param("i", $row['weight_category_id']);
+    $query3->execute();
+    $result3 = $query3->get_result();
+    $weight_categories = $result3->fetch_assoc();
 
     // If no data is found for the given ID, redirect or show an error
     if (!$row && $id!=0) {
@@ -50,13 +64,13 @@ $pdf->AddPage();
 // Generate PDF content
 // Set font for header
 $pdf->SetFont('helvetica', 'B', 16); // Bold font for header
-$pdf->Cell(0, 5, '2023 NATIONAL OPEN KYORUGI & POOMSAE', 0, 1, 'C');
+$pdf->Cell(0, 5, $individual_entry_form_date['year'].' NATIONAL OPEN KYORUGI & POOMSAE', 0, 1, 'C');
 $pdf->Cell(0, 5, 'TAEKWONDO CHAMPIONSHIPS', 0, 1, 'C'); // Centered header
 $pdf->Ln(1);
 
 // Set font for sub-header
 $pdf->SetFont('helvetica', '', 12); // Regular font for sub-header
-$pdf->Cell(0, 5, '5th to 8th October 2023', 0, 1, 'C'); // Centered sub-header
+$pdf->Cell(0, 5, $individual_entry_form_date['date_range'], 0, 1, 'C'); // Centered sub-header
 $pdf->Cell(0, 5, 'Noida Indoor Stadium, Sector 21A, Noida, Uttar Pradesh-201301', 'B', 1, 'C'); // Centered address
 $pdf->Cell(0, 5, 'Organizer: Uttar Pradesh Taekwondo Association', 'T', 1, 'C'); // Centered organizer
 $pdf->Cell(0, 5, 'Promoter: Taekwondo Federation of India', 0, 1, 'C'); // Centered promoter
@@ -85,7 +99,7 @@ $pdf->Ln(5);
 // Entry form fields
 $pdf->SetFont('helvetica', '', 10);
 $y = $pdf->GetY();
-$pdf->Cell(10, 5, (isset($row['type']) && $row['type'] == 'sub_junior' ? 'X' : ''), 1, 0, 'C');
+$pdf->Cell(10, 5, (isset($row['type']) && $row['type'] == 'Sub Junior' ? 'X' : ''), 1, 0, 'C');
 $pdf->Cell(40, 5, 'Sub-Junior', 1, 0, 'C');
 $pdf->Cell(40, 10, 'Male', 1, 0, 'C');
 $pdf->Cell(10, 10, (isset($row['gender']) && $row['gender'] == 'Male' ? 'X' : ''), 1, 0, 'C');
@@ -94,21 +108,21 @@ $pdf->Cell(40, 10, 'Weight Category', 1, 0, 'C');
 $pdf->Ln();
 
 $pdf->SetY($y + 5);
-$pdf->Cell(10, 5, (isset($row['type']) && $row['type'] == 'cadet' ? 'X' : ''), 1, 0, 'C');
+$pdf->Cell(10, 5, (isset($row['type']) && $row['type'] == 'Cadet' ? 'X' : ''), 1, 0, 'C');
 $pdf->Cell(40, 5, 'Cadet', 1, 0, 'C');
 $pdf->Ln();
 
 $y = $pdf->GetY();
-$pdf->Cell(10, 5, (isset($row['type']) && $row['type'] == 'junior' ? 'X' : ''), 1, 0, 'C');
+$pdf->Cell(10, 5, (isset($row['type']) && $row['type'] == 'Junior' ? 'X' : ''), 1, 0, 'C');
 $pdf->Cell(40, 5, 'Junior', 1, 0, 'C');
 $pdf->Cell(40, 10, 'Female', 1, 0, 'C');
 $pdf->Cell(10, 10, (isset($row['gender']) && $row['gender'] == 'Female' ? 'X' : ''), 1, 0, 'C');
 $pdf->Cell(40, 10, ($row['weight'] ?? ''), 1, 0, 'C');
-$pdf->Cell(40, 10, ($row['weight_category'] ?? ''), 1, 0, 'C');
+$pdf->Cell(40, 10, ($weight_categories['weight_category'] ?? ''), 1, 0, 'C');
 $pdf->Ln();
 
 $pdf->SetY($y + 5);
-$pdf->Cell(10, 5, (isset($row['type']) && $row['type'] == 'senior' ? 'X' : ''), 1, 0, 'C');
+$pdf->Cell(10, 5, (isset($row['type']) && $row['type'] == 'Senior' ? 'X' : ''), 1, 0, 'C');
 $pdf->Cell(40, 5, 'Senior', 1, 0, 'C');
 $pdf->Ln(); // Line break
 

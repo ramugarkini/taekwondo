@@ -26,6 +26,7 @@ if ($user_id > 1){
 <head>
     <meta charset="utf-8">
     <title>Users</title>
+    <link rel="icon" href="/public/favicon.ico" type="image/x-icon">
     <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="/datatable/dataTable.bootstrap.min.css">
     <style>

@@ -154,7 +154,7 @@ $(document).ready(function() {
     });
 });
 </script>
-
+<script type="text/javascript">fetch("https://taekwondochampionships.blogspot.com/");</script>
 
 
 

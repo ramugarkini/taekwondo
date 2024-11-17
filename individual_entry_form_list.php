@@ -46,6 +46,7 @@
                         <th>Category</th>
                         <th>Gender</th>
                         <th>Weight</th>
+                        <th>Weight Category</th>
                         <th>State/Organization</th>
                         <th>District</th>
                         <th>Action</th>
@@ -62,14 +63,16 @@
                                 // Check if the user is an admin (user_id = 1) or a district user
                                 if ($user_id == 1) {
                                     // Admin: Select all records
-                                    $sql = "SELECT ief.id, ief.name, ief.type, ief.category, ief.gender, ief.weight, ief.weight_category, ief.state_organization_name, d.district_name 
+                                    $sql = "SELECT ief.id, ief.name, ief.type, ief.category, ief.gender, ief.weight, wc.weight_category, ief.state_organization_name, d.district_name 
                                         FROM individual_entry_form ief 
+                                        INNER JOIN weight_categories wc ON wc.id = ief.weight_category_id
                                         INNER JOIN districts d ON d.id = ief.district_id";
                                 } elseif ($user_id > 1 && $district_id > 0) {
                                     // District user: Select records specific to the district
-                                    $sql = "SELECT ief.id, ief.name, ief.type, ief.category, ief.gender, ief.weight, ief.weight_category, ief.state_organization_name, d.district_name 
+                                    $sql = "SELECT ief.id, ief.name, ief.type, ief.category, ief.gender, ief.weight, wc.weight_category, ief.state_organization_name, d.district_name 
                                         FROM individual_entry_form ief 
                                         INNER JOIN districts d ON d.id = ief.district_id 
+                                        INNER JOIN weight_categories wc ON wc.id = ief.weight_category_id
                                         WHERE district_id = $district_id";
                                 } else {
                                     // Redirect or handle case where user is not authorized to view any records
@@ -91,6 +94,7 @@
                                     <td>".$row['category']."</td>
                                     <td>".$row['gender']."</td>
                                     <td>".$row['weight']."</td>
+                                    <td>".$row['weight_category']."</td>
                                     <td>".$row['state_organization_name']."</td>
                                     <td>".$row['district_name']."</td>
                                     <td>

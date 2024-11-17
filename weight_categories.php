@@ -9,8 +9,8 @@ $request_uri = $_SERVER['REQUEST_URI'];
 // Parse the URI to get the path elements
 $uri_segments = explode('/', trim($request_uri, '/'));
 
-// Check for the states path
-$base_path = 'states';
+// Check for the Weight Categories path
+$base_path = 'weight_categories';
 
 include 'crypto.php';
 
@@ -19,13 +19,14 @@ if ($user_id > 1){
     header('Location: /logout');
     exit();
 }
+
 ?>
 
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
-    <title>States</title>
+    <title>Weight Categories</title>
     <link rel="icon" href="/public/favicon.ico" type="image/x-icon">
     <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="/datatable/dataTable.bootstrap.min.css">
@@ -37,27 +38,26 @@ if ($user_id > 1){
 </head>
 <body>
     <div id="wrapper">
-        <?php include("menu.php"); ?>
+        <?php include 'menu.php'; ?>
 
-    <?php 
-        // Adjust the condition based on your needs
-        if (!isset($uri_segments[1])) { 
-        // if (count($uri_segments) === 2 && $uri_segments[0] === $base_path && $uri_segments[1] == "__") { 
-            include("states_list.php");
-        } elseif (count($uri_segments) === 2 && $uri_segments[0] === $base_path && is_numeric(decrypt($uri_segments[1], $key)) && decrypt($uri_segments[1], $key) >= 0) {
-            include("states_edit.php");
-        } else {
-            // Optionally handle cases where the number of segments does not match expected values
-            // header("HTTP/1.0 404 Not Found");
-            // echo "<div class='alert alert-danger'>Invalid request.</div>";
-            // exit;
-            header('Location: /');
-            exit();
-        }
-    ?>
+            <?php 
+                // Adjust the condition based on your needs
+                if (!isset($uri_segments[1])) { 
+                // if (count($uri_segments) === 2 && $uri_segments[0] === $base_path && $uri_segments[1] == "__") { 
+                    include("weight_categories_list.php");
+                } elseif (count($uri_segments) === 2 && $uri_segments[0] === $base_path && is_numeric(decrypt($uri_segments[1], $key)) && decrypt($uri_segments[1], $key) >= 0) {
+                    include("weight_categories_edit.php");
+                } else {
+                    // Optionally handle cases where the number of segments does not match expected values
+                    // header("HTTP/1.0 404 Not Found");
+                    // echo "<div class='alert alert-danger'>Invalid request.</div>";
+                    // exit;
+                    header('Location: /');
+                    exit();
+                }
+            ?>
+        </div>
     </div>
-    </div>
-
 
 
     <script src="/jquery/jquery.min.js"></script>

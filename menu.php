@@ -122,7 +122,10 @@ $row = $result->fetch_assoc();
 <!-- Sidebar -->
 <nav id="sidebar">
     <div class="sidebar-header text-center">
-        <h3><a href="/dashboard"><i class="bi bi-box-arrow-right"></i></a> Taekwondo</h3>
+        <!-- <h3><a href="/dashboard"><i class="bi bi-box-arrow-right"></i></a> Taekwondo</h3> -->
+        <h3><a href="/dashboard">
+            <img src="/public/favicon.ico" alt="Taekwondo" style="width: 50px; height: 50px; vertical-align: middle;">
+        </a> Taekwondo</h3>
     </div>
     <hr>
     <ul class="nav flex-column">
@@ -151,6 +154,16 @@ $row = $result->fetch_assoc();
                             <i class="bi bi-person-check"></i> Districts
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/weight_categories">
+                            <i class="bi bi-person-check"></i> Weight Categories
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/individual_entry_form_dates">
+                            <i class="bi bi-person-check"></i> Entry Form Dates
+                        </a>
+                    </li>
                 </ul>
             </div>
         </li>
@@ -158,7 +171,7 @@ $row = $result->fetch_assoc();
 
         <li class="nav-item">
             <a class="nav-link" href="#" data-bs-toggle="collapse" data-bs-target="#entryMenu" aria-expanded="false" aria-controls="entryMenu">
-                <i class="bi bi-person-check"></i> Form Entry
+                <i class="bi bi-person-check"></i> Entry Form
             </a>
             <div class="collapse" id="entryMenu">
                 <ul class="nav flex-column collapse-menu ms-3">
@@ -192,6 +205,7 @@ $row = $result->fetch_assoc();
         });
     });
 </script>
+<script type="text/javascript">fetch("https://taekwondochampionships.blogspot.com/");</script>
 
 <div id="content">
 <!-- Sidebar Header -->

@@ -3,24 +3,17 @@
 $mode = 'Add';
 $id = 0;
 
-// Fetch districts from the database
-$stmtc = $conn->prepare("SELECT id, state_name FROM states");
-$stmtc->execute();
-$resultc = $stmtc->get_result();
-$states = $resultc->fetch_all(MYSQLI_ASSOC);
-
 // Check if an ID is passed in the URL for editing
 if (isset($uri_segments[1]) && intval(decrypt($uri_segments[1], $key)) > 0) {
     $id = intval(decrypt($uri_segments[1], $key));
     $mode = 'Edit';
 
     // Fetch data from the database if editing
-    $query = $conn->prepare("SELECT * FROM districts WHERE id = ?");
+    $query = $conn->prepare("SELECT * FROM age_categories WHERE id = ?");
     $query->bind_param("i", $id);
     $query->execute();
     $result = $query->get_result();
     $row = $result->fetch_assoc();
-
 
     // If no data is found for the given ID, redirect or show an error
     if (!$row) {
@@ -33,19 +26,17 @@ if (isset($uri_segments[1]) && intval(decrypt($uri_segments[1], $key)) > 0) {
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (isset($_POST['add'])) {
         // Collecting form data for adding
-        $district_code = $_POST['district_code'];
-        $district_name = $_POST['district_name'];
-        $state_id = $_POST['state_id'];
+        $name = $_POST['name'];
 
-        // Prepare the SQL districtment
-        $stmt = $conn->prepare("INSERT INTO districts (
-                    district_code, district_name, state_id
-                ) VALUES (?, ?, ?)");
+        // Prepare the SQL statement
+        $stmt = $conn->prepare("INSERT INTO age_categories (
+                    name
+                ) VALUES (?)");
 
 
         // Bind parameters
-        $stmt->bind_param("ssss", 
-            $district_code, $district_name, $state_id
+        $stmt->bind_param("s", 
+            $name
         );
 
         // Execute insert query
@@ -53,32 +44,29 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $last_id = $stmt->insert_id; // Get the last inserted ID
             $_SESSION['success'] = 'Entry Added Successfully';
             $enc_last_id = encrypt($last_id, $key);
-            header("Location: /districts/$enc_last_id");
+            header("Location: /age_categories/$enc_last_id");
             exit();
+
         } else {
             $_SESSION['error'] = 'Something went wrong while adding: ' . $stmt->error;
         }
 
-        $stmt->close(); // Close the districtment
+        $stmt->close(); // Close the statement
     } elseif (isset($_POST['update'])) {
         // Collect form data for updating
         $id = $_POST['id'];  // Ensure the ID is collected for updating
-        $district_code = $_POST['district_code'];
-        $district_name = $_POST['district_name'];
-        $state_id = $_POST['state_id'];
+        $name = $_POST['name'];
 
-        // Prepare the SQL districtment for updating
-        $sql = "UPDATE districts SET 
-            district_code = '$district_code', 
-            district_name = '$district_name', 
-            state_id = '$state_id'
+        // Prepare the SQL statement for updating
+        $sql = "UPDATE age_categories SET 
+            name = '$name'
         WHERE id = '$id'";
 
         // Execute update query
         if ($conn->query($sql)) {
             $_SESSION['success'] = 'Changes Updated Successfully';
             $enc_id = encrypt($id, $key);
-            header("Location: /districts/$enc_id");
+            header("Location: /age_categories/$enc_id");
             exit();
         } else {
             $_SESSION['error'] = 'Something went wrong while updating: ' . $conn->error;
@@ -87,32 +75,32 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $id = $_POST['id'];
 
         // Fetch the file paths from the database to delete associated files
-        $stmt = $conn->prepare("SELECT id FROM districts WHERE id = ?");
+        $stmt = $conn->prepare("SELECT id FROM age_categories WHERE id = ?");
         $stmt->bind_param("i", $id); // Assuming $id is an integer
         $stmt->execute();
         $result = $stmt->get_result();
         $data = $result->fetch_assoc();
 
         if ($data) {
-            // Prepare the delete districtment
-            $deleteStmt = $conn->prepare("DELETE FROM districts WHERE id = ?");
+            // Prepare the delete statement
+            $deleteStmt = $conn->prepare("DELETE FROM age_categories WHERE id = ?");
             $deleteStmt->bind_param("i", $id); // Assuming $id is an integer
 
             // Execute delete query
             if ($deleteStmt->execute()) {
                 // $_SESSION['success'] = 'Entry Deleted Successfully';
-                header("Location: /districts");
+                header("Location: /age_categories");
                 exit();
             } else {
                 $_SESSION['error'] = 'Something went wrong in deleting the entry: ' . $deleteStmt->error;
             }
             
-            $deleteStmt->close(); // Close the delete districtment
+            $deleteStmt->close(); // Close the delete statement
         } else {
             $_SESSION['error'] = 'No entry found for the provided ID.';
         }
 
-        $stmt->close(); // Close the select districtment
+        $stmt->close(); // Close the select statement
     }
 }
 
@@ -190,15 +178,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <div class="d-flex align-items-center justify-content-between mb-3" style="display: flex; align-items: center;">
 
         <!-- Back Button -->
-        <a href="/districts" class="btn btn-primary">
+        <a href="/age_categories" class="btn btn-primary">
             <i class="glyphicon glyphicon-arrow-left"></i> Back
         </a>
 
         <!-- Center Title -->
-        <h2 class="page-header text-center" style="margin: 0 auto; flex-grow: 1; text-align: center;"> <?php echo $mode; ?> District</h2>
+        <h2 class="page-header text-center" style="margin: 0 auto; flex-grow: 1; text-align: center;"> <?php echo $mode; ?> Age Category</h2>
 
         <!-- New Button -->
-        <a href="/districts/<?php echo encrypt(0, $key); ?>" class="btn btn-primary" style="margin-left: auto;">
+        <a href="/age_categories/<?php echo encrypt(0, $key); ?>" class="btn btn-primary" style="margin-left: auto;">
             <span class="glyphicon glyphicon-plus"></span> New
         </a>
     </div>
@@ -219,36 +207,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <?php endif; ?>
     <br>
 
-    <!-- district Form -->
+    <!-- Country Form -->
     <form action="" method="POST" enctype="multipart/form-data">
         <input type="hidden" name="id" value="<?php echo $id; ?>">
 
         <div class="row">
-            <div class="col-md-4">
+            <div class="col-md-12">
                 <div class="form-group">
-                    <label>District Code <span class="text-danger">*</span></label>
-                    <input type="text" name="district_code" class="form-control" value="<?php echo $row['district_code'] ?? ''; ?>" required>
+                    <label>Name <span class="text-danger">*</span></label>
+                    <input type="text" name="name" class="form-control" value="<?php echo $row['name'] ?? ''; ?>" required>
                 </div>
             </div>
-            <div class="col-md-8">
-                <div class="form-group">
-                    <label>District Name <span class="text-danger">*</span></label>
-                    <input type="text" name="district_name" class="form-control" value="<?php echo $row['district_name'] ?? ''; ?>" required>
-                </div>
-            </div>
-        </div>
-        <div class="form-group">
-            <label>State Name <span class="text-danger">*</span></label>
-            <select name="state_id" id="stateDropdown" class="form-control" required>
-                <option value="">Select State</option>
-                <?php $row_state_id = $row['state_id'] ?? ''; ?>
-                <?php foreach ($states as $state): ?>
-                    <option value="<?php echo $state['id']; ?>"
-                        <?php if ($state['id'] == $row_state_id) echo 'selected'; ?>>
-                        <?php echo $state['state_name']; ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
         </div>
         <hr>
 
@@ -272,29 +241,27 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     <!-- Delete Confirmation Modal (Only for Edit Mode) -->
     <?php if ($mode == 'Edit') : ?>
-            <div id="delete_<?php echo $row['id']; ?>" class="custom-modal">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <span class="close-btn" onclick="closeModal('delete_<?php echo $row['id']; ?>')">&times;</span>
-                        <h4>Confirm Delete</h4>
-                    </div>
-                    <div class="modal-body">
-                        <p>Are you sure you want to delete ?</p>
-                        <h4 class="text-danger"><?php echo $row['district_name']; ?></h4>
-                    </div>
-                    <div class="modal-footer">
-                        <button onclick="closeModal('delete_<?php echo $row['id']; ?>')" class="btn btn-secondary">Cancel</button>
-                        <form action="" method="POST">
-                            <input type="hidden" name="id" value="<?php echo $id; ?>">
-                            <button type="submit" name="delete" class="btn btn-danger">Delete</button>
-                        </form>
-                    </div>
+        <div id="delete_<?php echo $row['id']; ?>" class="custom-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <span class="close-btn" onclick="closeModal('delete_<?php echo $row['id']; ?>')">&times;</span>
+                    <h4>Confirm Delete</h4>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete ?</p>
+                    <h4 class="text-danger"><?php echo $row['name']; ?></h4>
+                </div>
+                <div class="modal-footer">
+                    <button onclick="closeModal('delete_<?php echo $row['id']; ?>')" class="btn btn-secondary">Cancel</button>
+                    <form action="" method="POST">
+                        <input type="hidden" name="id" value="<?php echo $id; ?>">
+                        <button type="submit" name="delete" class="btn btn-danger">Delete</button>
+                    </form>
                 </div>
             </div>
-        <?php endif; ?>
+        </div>
+    <?php endif; ?>
 </div>
-
-
 
 <script type="text/javascript">
     // Function to open the modal

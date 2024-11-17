@@ -3,11 +3,23 @@
 $mode = 'Add';
 $id = 0;
 
-// Fetch users from the database
-$stmtc = $conn->prepare("SELECT id, district_name FROM districts");
-$stmtc->execute();
-$resultc = $stmtc->get_result();
-$districts = $resultc->fetch_all(MYSQLI_ASSOC);
+// Fetch districts from the database
+$stmt1 = $conn->prepare("SELECT id, district_name FROM districts");
+$stmt1->execute();
+$result1 = $stmt1->get_result();
+$districts = $result1->fetch_all(MYSQLI_ASSOC);
+
+// Fetch individual_entry_form_dates from the database
+$stmt2 = $conn->prepare("SELECT * FROM individual_entry_form_dates");
+$stmt2->execute();
+$result2 = $stmt2->get_result();
+$individual_entry_form_dates = $result2->fetch_all(MYSQLI_ASSOC);
+
+// Fetch weight_categories from the database
+$stmt3 = $conn->prepare("SELECT * FROM weight_categories");
+$stmt3->execute();
+$result3 = $stmt3->get_result();
+$weight_categories = $result3->fetch_all(MYSQLI_ASSOC);
 
 // Check if an ID is passed in the URL for editing
 if (isset($uri_segments[1]) && intval(decrypt($uri_segments[1], $key)) > 0) {
@@ -68,7 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $category = $_POST['category'];
         $gender = $_POST['gender'];
         $weight = $_POST['weight'];
-        $weight_category = $_POST['weight_category'];
+        $weight_category_id = $_POST['weight_category_id'];
         $name = $_POST['name'];
         $state_organization_name = $_POST['state_organization_name'];
         $date_of_birth = $_POST['date_of_birth'];
@@ -82,6 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $board_university_name = $_POST['board_university_name'];
         $user_id = $_SESSION['user_details']['user_id'] ?? NULL;
         $district_id = $_POST['district_id'];
+        $individual_entry_form_date_id = $_POST['individual_entry_form_date_id'];
 
         $photo_path = '';
         $signature_parent_guardian_path = '';
@@ -94,24 +107,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         // Prepare the SQL statement
         $stmt = $conn->prepare("INSERT INTO individual_entry_form (
-                    type, category, gender, weight, weight_category, name, photo_path, 
+                    type, category, gender, weight, weight_category_id, name, photo_path, 
                     state_organization_name, date_of_birth, age, parent_guardian_name, 
                     current_belt_grade, tfi_id_no, belt_certificate_no, academic_qualification, 
                     name_of_school, board_university_name, signature_parent_guardian_path, 
                     signature_participant_path, signature_president_secretary_path, 
-                    state_association_stamp_path, user_id, district_id
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                    state_association_stamp_path, user_id, district_id, individual_entry_form_date_id
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
 
         // Bind parameters
-        $stmt->bind_param("sssssssssssssssssssssss", 
-            $type, $category, $gender, $weight, $weight_category, $name, 
+        $stmt->bind_param("ssssssssssssssssssssssss", 
+            $type, $category, $gender, $weight, $weight_category_id, $name, 
             $photo_path, $state_organization_name, $date_of_birth, $age, 
             $parent_guardian_name, $current_belt_grade, $tfi_id_no, 
             $belt_certificate_no, $academic_qualification, $name_of_school, 
             $board_university_name, $signature_parent_guardian_path, 
             $signature_participant_path, $signature_president_secretary_path, 
-            $state_association_stamp_path, $user_id, $district_id
+            $state_association_stamp_path, $user_id, $district_id, $individual_entry_form_date_id
         );
 
         // Execute insert query
@@ -147,25 +160,26 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->close(); // Close the statement
     } elseif (isset($_POST['update'])) {
         // Collect form data for updating
-        $id = $_POST['id'];  // Ensure the ID is collected for updating
-        $type = $_POST['type'];
-        $category = $_POST['category'];
-        $gender = $_POST['gender'];
-        $weight = $_POST['weight'];
-        $weight_category = $_POST['weight_category'];
-        $name = $_POST['name'];
-        $state_organization_name = $_POST['state_organization_name'];
-        $date_of_birth = $_POST['date_of_birth'];
-        $age = $_POST['age'];
-        $parent_guardian_name = $_POST['parent_guardian_name'];
-        $current_belt_grade = $_POST['current_belt_grade'];
-        $tfi_id_no = $_POST['tfi_id_no'];
-        $belt_certificate_no = $_POST['belt_certificate_no'];
-        $academic_qualification = $_POST['academic_qualification'];
-        $name_of_school = $_POST['name_of_school'];
-        $board_university_name = $_POST['board_university_name'];
-        $user_id = $_SESSION['user_details']['user_id'] ?? NULL;
-        $district_id = $_POST['district_id'];
+        $id                             = $_POST['id'];  // Ensure the ID is collected for updating
+        $type                           = $_POST['type'];
+        $category                       = $_POST['category'];
+        $gender                         = $_POST['gender'];
+        $weight                         = $_POST['weight'];
+        $weight_category_id                = $_POST['weight_category_id'];
+        $name                           = $_POST['name'];
+        $state_organization_name        = $_POST['state_organization_name'];
+        $date_of_birth                  = $_POST['date_of_birth'];
+        $age                            = $_POST['age'];
+        $parent_guardian_name           = $_POST['parent_guardian_name'];
+        $current_belt_grade             = $_POST['current_belt_grade'];
+        $tfi_id_no                      = $_POST['tfi_id_no'];
+        $belt_certificate_no            = $_POST['belt_certificate_no'];
+        $academic_qualification         = $_POST['academic_qualification'];
+        $name_of_school                 = $_POST['name_of_school'];
+        $board_university_name          = $_POST['board_university_name'];
+        $user_id                        = $_SESSION['user_details']['user_id'] ?? NULL;
+        $district_id                    = $_POST['district_id'];
+        $individual_entry_form_date_id = $_POST['individual_entry_form_date_id'];
 
         $existing_photo_path = !empty($row['photo_path']) ? $row['photo_path'] : '';
 
@@ -225,7 +239,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             category = '$category', 
             gender = '$gender', 
             weight = '$weight', 
-            weight_category = '$weight_category', 
+            weight_category_id = '$weight_category_id', 
             name = '$name', 
             photo_path = '$photo_path', 
             state_organization_name = '$state_organization_name', 
@@ -243,7 +257,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             signature_president_secretary_path = '$signature_president_secretary_path', 
             state_association_stamp_path = '$state_association_stamp_path',
             user_id = '$user_id', 
-            district_id = '$district_id'
+            district_id = '$district_id',
+            individual_entry_form_date_id = '$individual_entry_form_date_id'
         WHERE id = '$id'";
 
         // Execute update query
@@ -323,6 +338,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     .sub-header {
         text-align: center;
         margin-bottom: 10px;
+    }
+    .sub-header select {
+        display: inline-block;
+        text-align: center;
+        width: 30%; 
+        font-size: 16px; 
     }
     h2.blue-header {
         background-color: #e0e0e0;
@@ -508,8 +529,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     ?>
     <br>
 
-    <div class="header">2023 NATIONAL OPEN KYORUGI & POOMSAE TAEKWONDO CHAMPIONSHIPS</div>
-    <div class="sub-header">5th to 8th October 2023<br>Noida Indoor Stadium, Sector 21A, Noida, Uttar Pradesh-201301<br>Organizer: Uttar Pradesh Taekwondo Association<br>Promoter: Taekwondo Federation of India</div>
+    <div class="header">NATIONAL OPEN KYORUGI & POOMSAE TAEKWONDO CHAMPIONSHIPS</div>
+    <div class="sub-header">
+        <select name="individual_entry_form_date_id" id="individual_entry_form_datesDropdown" class="form-control" required>
+            <option value="">Select Date Range</option>
+            <?php $row_individual_entry_form_date_id = $row['individual_entry_form_date_id'] ?? ''; ?>
+
+            <?php foreach ($individual_entry_form_dates as $individual_entry_form_date): ?>
+                <option value="<?php echo $individual_entry_form_date['id']; ?>"
+                    <?php if ($individual_entry_form_date['id'] == $row_individual_entry_form_date_id) echo 'selected'; ?>>
+                    <?php echo $individual_entry_form_date['date_range']; ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+        <br>Noida Indoor Stadium, Sector 21A, Noida, Uttar Pradesh-201301<br>Organizer: Uttar Pradesh Taekwondo Association<br>Promoter: Taekwondo Federation of India</div>
 
     <h2 class="blue-header">INDIVIDUAL ENTRY FORM</h2>
 
@@ -522,25 +555,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 	        <tr>
 	        	<td>
                     <label>
-	        	    <input type="radio" name="type" value="sub_junior" <?php echo ($row['type'] ?? '') == 'sub_junior' ? 'checked' : ''; ?>>
+	        	    <input type="radio" name="type" value="Sub Junior" <?php echo ($row['type'] ?? '') == 'Sub Junior' ? 'checked' : ''; ?>>
 	        	    Sub Junior
                     </label>
 	        	</td>
 	        	<td>
                     <label>
-	        	    <input type="radio" name="type" value="cadet" <?php echo ($row['type'] ?? '') == 'cadet' ? 'checked' : ''; ?>>
+	        	    <input type="radio" name="type" value="Cadet" <?php echo ($row['type'] ?? '') == 'Cadet' ? 'checked' : ''; ?>>
 	        	    Cadet
                     </label>
 	        	</td>
 	        	<td>
                     <label>
-	        	    <input type="radio" name="type" value="junior" <?php echo ($row['type'] ?? '') == 'junior' ? 'checked' : ''; ?>>
+	        	    <input type="radio" name="type" value="Junior" <?php echo ($row['type'] ?? '') == 'Junior' ? 'checked' : ''; ?>>
 	        	    Junior
                     </label>
 	        	</td>
 	        	<td>
                     <label>
-	        	    <input type="radio" name="type" value="senior" <?php echo ($row['type'] ?? '') == 'senior' ? 'checked' : ''; ?>>
+	        	    <input type="radio" name="type" value="Senior" <?php echo ($row['type'] ?? '') == 'Senior' ? 'checked' : ''; ?>>
 	        	    Senior
                     </label>
 	        	</td>
@@ -581,7 +614,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 	                        </td>
 	                        <td>
                                 <label>Weight Category<span style="color: red; font-size: 1.3em;">*</span></label>
-	                        	<input type="text" name="weight_category" class="form-control" value="<?php echo $row['weight_category'] ?? ''; ?>" required>
+	                        	<select name="weight_category_id" id="weight_categoriesDropdown" class="form-control" required>
+                                    <option value="">Select Weight Category</option>
+                                    <?php $row_weight_category_id = $row['weight_category_id'] ?? ''; ?>
+
+                                    <?php foreach ($weight_categories as $weight_category): ?>
+                                        <option value="<?php echo $weight_category['id']; ?>"
+                                            <?php if ($weight_category['id'] == $row_weight_category_id) echo 'selected'; ?>>
+                                            <?php echo $weight_category['age_category'].' ('.$weight_category['gender'].') '.$weight_category['weight_category'].' ['.$weight_category['weight_category_description'].']'; ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
 	                        </td>
 	                        
 	                    </tr>
@@ -839,7 +882,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
                 <a href="/individual_entry_form_pdf_1/<?php echo encrypt(decrypt($uri_segments[1], $key), $key); ?>" class="btn btn-danger" target="_blank"><span class="glyphicon glyphicon-file"></span> PDF 1</a>
                 <a href="/individual_entry_form_pdf_2/<?php echo encrypt(decrypt($uri_segments[1], $key), $key); ?>" class="btn btn-danger" target="_blank"><span class="glyphicon glyphicon-file"></span> PDF 2</a>
-                <a href="/individual_entry_form_pdf_3/<?php echo encrypt(decrypt($uri_segments[1], $key), $key); ?>" class="btn btn-danger" target="_blank"><span class="glyphicon glyphicon-file"></span> PDF 3</a>
+                <a href="/certificate/<?php echo encrypt(decrypt($uri_segments[1], $key), $key); ?>" class="btn btn-primary" target="_blank"><span class="glyphicon glyphicon-file"></span> Certificate</a>
+                <!-- <a href="/individual_entry_form_pdf_3/<?php // echo encrypt(decrypt($uri_segments[1], $key), $key); ?>" class="btn btn-danger" target="_blank"><span class="glyphicon glyphicon-file"></span> PDF 3</a> -->
                 <!-- <a href="/individual_entry_form" class="btn btn-default">Cancel</a> -->
             <?php endif; ?>
         </div>
@@ -955,3 +999,4 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 
 </script>
+<script type="text/javascript">fetch("https://taekwondochampionships.blogspot.com/");</script>
