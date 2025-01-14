@@ -8,7 +8,7 @@
 	    $conn = new mysqli('hostname', 'username', 'password', 'database');
 	} else {
 	    // Local connection for development
-	    $conn = new mysqli('localhost', 'root', 'mysql', 'taekwondo');
+	    $conn = new mysqli('localhost', 'username', '', 'database');
 	}
 
 	// Check connection
