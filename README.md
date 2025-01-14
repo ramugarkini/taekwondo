@@ -27,21 +27,4 @@ This project is an online system for managing participant entries for a **Taekwo
 ## Why This Project?
 This system helps **Taekwondo Championship** organizers efficiently manage participant entries. It reduces manual effort by allowing participants to check for existing entries online. This is particularly useful for event registration, where avoiding duplicate entries and verifying participant details is crucial.
 
-## Setup
 
-### Prerequisites
-- PHP and a MySQL database for backend processing.
-- jQuery for handling AJAX requests.
-
-### Installation
-1. Clone or download the repository.
-2. Set up the **database connection** in `connection.php` with the appropriate credentials.
-3. Run the project on a server that supports PHP and MySQL.
-4. Ensure the `individual_entry_form` table is created in the database with appropriate fields (name, date_of_birth, etc.).
-
-### Running the Project
-- Access the **index.php** page to check for existing entries.
-- Use the provided form to enter your details and check if an entry already exists.
-
-## License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
